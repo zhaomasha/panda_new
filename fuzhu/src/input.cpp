@@ -42,7 +42,7 @@ int main(int argc,char* argv[])
          v_type id=atol(data.c_str());
          getline(fin,data);
          string nickname=data;
-         Vertex_u v(id,nickname);
+         Vertex_u v(id,nickname,30);
          vs.push_back(v);
          r++;
          if(r==pack_num){

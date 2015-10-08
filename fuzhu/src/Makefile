@@ -1,24 +1,44 @@
-cppflags=-ggdb3 -rdynamic
-headers=-I inc
+cppflags=
+headers=-I ../../inc
+libs=-lpanda -L ../../lib
 
 bin_dir=bin
 
-server_source=src/panda_master.cpp src/
-slave_source=src/panda_slave.cpp src/panda_subgraph.cpp src/panda_graph.cpp src/panda_graph_set.cpp src/panda_split_method.cpp src/panda_util.cpp 
-client_source=src/panda_client.cpp src/panda_split_method.cpp src/panda_util.cpp
+targets=../bin/input ../bin/input_new ../bin/input_random_edge ../bin/input_random_vertex ../bin/read_edge ../bin/read_edge_on_attr ../bin/read_vertex ../bin/read_vertex_number ../bin/read_vertex_random
 
-all: 
+all: $(targets)
 
-bin/panda_server: $(server_source)
-	g++ $(cppflags) $(headers) -o $@ $^ -lzmq -lpthread
 
-bin/panda_slave: $(slave_source)
-	g++ $(cppflags) $(headers) -o $@ $^ -lzmq -lpthread
+../bin/input: input.cpp
+	g++ $(cppflags) $(headers) $(libs) -o $@ $^ 
 
-lib/libpanda.so: $(client_source)
-	g++ -shared -fPIC $(cppflags) $(headers) -o $@ $^ -lzmq -lpthread
+../bin/input_new: input_new.cpp
+	g++ $(cppflags) $(headers) $(libs) -o $@ $^ 
+
+../bin/input_random_edge: input_random_edge.cpp
+	g++ $(cppflags) $(headers) $(libs) -o $@ $^ 
+
+../bin/input_random_vertex: input_random_vertex.cpp
+	g++ $(cppflags) $(headers) $(libs) -o $@ $^ 
+
+../bin/read_edge: read_edge.cpp
+	g++ $(cppflags) $(headers) $(libs) -o $@ $^ 
+
+../bin/read_edge_on_attr: read_edge_on_attr.cpp
+	g++ $(cppflags) $(headers) $(libs) -o $@ $^ 
+
+../bin/read_vertex: read_vertex.cpp
+	g++ $(cppflags) $(headers) $(libs) -o $@ $^ 
+
+../bin/read_vertex_number: read_vertex_number.cpp
+	g++ $(cppflags) $(headers) $(libs) -o $@ $^ 
+
+../bin/read_vertex_random: read_vertex_random.cpp
+	g++ $(cppflags) $(headers) $(libs) -o $@ $^ 
+
+
 
 .PHONY: clean
 
 clean:
-	rm bin/panda_server bin/panda_slave lib/libpanda.so
+	rm $(targets)
