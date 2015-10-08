@@ -3,11 +3,11 @@ headers=-I inc
 
 bin_dir=bin
 
-server_source=src/panda_master.cpp src/panda_util.cpp src/panda_metadata.cpp src/panda_split_method.cpp
+server_source=src/panda_master.cpp src/
 slave_source=src/panda_slave.cpp src/panda_subgraph.cpp src/panda_graph.cpp src/panda_graph_set.cpp src/panda_split_method.cpp src/panda_util.cpp 
 client_source=src/panda_client.cpp src/panda_split_method.cpp src/panda_util.cpp
 
-all: bin/panda_server bin/panda_slave lib/libpanda.so
+all: 
 
 bin/panda_server: $(server_source)
 	g++ $(cppflags) $(headers) -o $@ $^ -lzmq -lpthread
