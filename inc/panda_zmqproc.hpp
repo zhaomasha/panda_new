@@ -7,8 +7,8 @@
 using namespace zmq;
 
 enum{ASK_CMD,ASK_ARG,ASK_SIZE};//请求包括两个字段，一个是命令，一个是参数，具体参数是什么，根据命令的类型决定
-enum{CMD_CREATE_GRAPH,CMD_GRAPH_IN,CMD_GET_META,CMD_ADD_VERTEX,CMD_ADD_EDGE,CMD_READ_EDGE,CMD_ADD_EDGES,CMD_ADD_VERTEXES,CMD_READ_EDGES,CMD_READ_TWO_EDGES,CMD_READ_EDGE_INDEX,CMD_GET_ALL_VERTEX_NUM,CMD_GET_ALL_EDGE_NUM,CMD_READ_VERTEX,CMD_FLUSH,CMD_SIZE};//这是命令的类
-const string cmd_name[CMD_SIZE]={"create graph","graph is in?","get ip of vertex","add vertex","add edge","read all edge of a vertex","add many edges","add many vertexes","read many edges","read all edge between two vertex","read edges about attribute","get vertex num","get edge num","read vertex","flush"};
+enum{CMD_CREATE_GRAPH,CMD_GRAPH_IN,CMD_GET_META,CMD_ADD_VERTEX,CMD_ADD_EDGE,CMD_READ_EDGE,CMD_ADD_EDGES,CMD_ADD_VERTEXES,CMD_READ_EDGES,CMD_READ_TWO_EDGES,CMD_READ_EDGE_INDEX,CMD_GET_ALL_VERTEX_NUM,CMD_GET_ALL_EDGE_NUM,CMD_READ_VERTEX,CMD_FLUSH,CMD_GET_ALL_VERTEX,CMD_SIZE};//这是命令的类
+const string cmd_name[CMD_SIZE]={"create graph","graph is in?","get ip of vertex","add vertex","add edge","read all edge of a vertex","add many edges","add many vertexes","read many edges","read all edge between two vertex","read edges about attribute","get vertex num","get edge num","read vertex","flush","get all vertex"};
 enum{ANS_STATUS,ANS_DATA,ANS_SIZE};//响应包括两个字段，一个是状态，一个是数据，具体数据是什么，根据请求的类型决定
 enum{STATUS_OK,STATUS_EXIST,STATUS_NOT_EXIST,STATUS_V_EXIST,STATUS_V_NOT_EXIST,STATUS_E_EXIST};//这是相应的状态的类型
 //下面都是通信的消息体
@@ -291,6 +291,32 @@ public:
 		}while(imsg[ANS_DATA].more());
 		
 	}
+	//接收顶点的消息，不知道有几个消息段，结果存放在集合中。解析完后，要判断状态，如果状态是ok，而且返回有数据时，集合里面才有数据
+	void parse_ans(list<Vertex_u> &vertexes){
+		//首先接收状态
+		sock.recv(imsg[ANS_STATUS],0);
+		if(get_status()!=STATUS_OK){	
+			//如果状态不是ok，则只要接收说明字段
+			sock.recv(imsg[ANS_DATA],0);
+			return;
+		}
+		//如果状态ok，则继续接收包含边的段
+		if(imsg[ANS_STATUS].more()==0) return;//如果后续没有消息段了，直接返回，说明没有数据了
+		int i=0;
+		do{
+			imsg[ANS_DATA].rebuild();//用之前先把消息体重建
+			sock.recv(imsg[ANS_DATA],0);//接收消息段
+			//解析消息段，把消息里面的边存入到集合中
+			int num=get_data_size()/sizeof(Vertex_u);//计算消息段中边的数目
+			int j;
+			Vertex_u *vertex_p=(Vertex_u*)get_data();
+			for(j=0;j<num;j++){
+				vertexes.push_back(vertex_p[j]);
+			}
+			
+		}while(imsg[ANS_DATA].more());
+		
+	}
 	uint32_t get_status(){
 		return *(uint32_t*)imsg[ANS_STATUS].data();
 	}
@@ -459,6 +485,47 @@ public:
 		//发送
 		omsg[ANS_DATA].rebuild(num_mod*sizeof(Edge_u));//发送前先重构消息
 		memcpy(omsg[ANS_DATA].data(),coms,num_mod*sizeof(Edge_u));//把要发送的内容复制给消息体
+		sock.send(omsg[ANS_DATA],0);	
+	}
+	//回复客户端顶点的集合，状态必然是ok
+	void ans(uint32_t status,list<Vertex_u> &vertexes){
+		zmq::message_t omsg[ANS_SIZE];	
+		omsg[ANS_STATUS].rebuild(sizeof(uint32_t));
+		*(uint32_t*)omsg[ANS_STATUS].data()=status;
+		if(vertexes.size()==0){
+			sock.send(omsg[ANS_STATUS],0);//如果集合没有数据，则send的参数是0，直接返回
+			return;
+		}
+		sock.send(omsg[ANS_STATUS],ZMQ_SNDMORE);//如果集合有数据，则send参数是ZMQ_SNDMORE,接着发送边
+		uint32_t num=vertexes.size()/size;//消息的段数减1
+		uint32_t num_mod=vertexes.size()%size;//最后一个消息段的边的数目
+		if(num_mod==0) {
+			num-=1;//如果模是0，说明之前的num是消息的段数，而不是段数减1
+			num_mod=size;//最后一段，模为size
+		}
+		Vertex_u coms[size];//要发送的内容	
+		list<Vertex_u>::iterator it=vertexes.begin();
+		uint32_t i=0,j;
+		while(i<num){
+			//发送完整的消息段
+			for(j=0;j<size;j++){
+				coms[j]=*it;//把集合中的边复制到数组的边中
+				it++;	
+			}
+			//复制完size个后，就发送
+			omsg[ANS_DATA].rebuild(size*sizeof(Vertex_u));//发送前先重构消息
+			memcpy(omsg[ANS_DATA].data(),coms,size*sizeof(Vertex_u));//把要发送的内容复制给消息体
+			sock.send(omsg[ANS_DATA],ZMQ_SNDMORE);
+			i++;
+		}
+		//发送最后一个消息段
+		for(j=0;j<num_mod;j++){
+			coms[j]=*it;//把集合中的边复制到数组的边中
+			it++;	
+		}
+		//发送
+		omsg[ANS_DATA].rebuild(num_mod*sizeof(Vertex_u));//发送前先重构消息
+		memcpy(omsg[ANS_DATA].data(),coms,num_mod*sizeof(Vertex_u));//把要发送的内容复制给消息体
 		sock.send(omsg[ANS_DATA],0);	
 	}
 private:

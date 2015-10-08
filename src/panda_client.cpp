@@ -270,6 +270,40 @@ uint32_t Client::get_vertex_num_pthread(uint32_t **nums,uint32_t *size){
 	delete[] threads;
 	return STATUS_OK;
 }
+//查询所有顶点的线程函数
+void* thread_read_all_vertex(void *args){
+	Ip_All_Vertex* ip_all_vertex=(Ip_All_Vertex*)args;
+	Requester req_slave(*ip_all_vertex->sock);
+    proto_graph ask_arg(ip_all_vertex->graph_name);
+	req_slave.ask(CMD_GET_ALL_VERTEX,&(ask_arg),sizeof(proto_graph));
+	req_slave.parse_ans(*(ip_all_vertex->vertexes));
+}
+//多线程查询顶点数目
+uint32_t Client::read_all_vertex(list<Vertex_u> **vertexes,uint32_t *size){	
+	if(current_graph()=="") return STATUS_NOT_EXIST;//如果还没有连接图，则返回状态STATUS_NOT_EXIST
+    //获取所有节点的ip
+    vector<string> ips;
+    get_all_meta(ips);
+	//多线程的发送，所以要给每个线程数据
+	*size=ips.size();
+	*vertexes=new list<Vertex_u>[*size];
+	Ip_All_Vertex* datas=new Ip_All_Vertex[*size];
+	uint32_t index=0;
+	pthread_t *threads=new pthread_t[*size];
+	for(int index=0;index<*size;index++){
+		datas[index].graph_name=graph_name;
+		datas[index].sock=find_sock(ips[index]);
+        datas[index].vertexes=&(*vertexes)[index];
+		pthread_create(&threads[index],NULL,thread_read_all_vertex,&datas[index]);
+	}
+	//等待线程的运行完成
+	for(index=0;index<*size;index++){
+		pthread_join(threads[index],NULL);
+	}
+	delete[] datas;
+	delete[] threads;
+	return STATUS_OK;
+}
 //通知刷新的线程函数
 /*void* thread_flush(void *args){
 	Ip_Graph* ip_graph=(Ip_Graph*)args;

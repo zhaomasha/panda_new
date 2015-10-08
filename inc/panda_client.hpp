@@ -63,7 +63,8 @@ public:
 	uint32_t get_edge_num_pthread(uint32_t** nums,uint32_t *size);
     //查询顶点的信息，同时返回该顶点的边数目
     uint32_t read_vertex(v_type id,Vertex_u& v,uint32_t *num);
-
+	//返回所有的顶点
+	uint32_t read_all_vertex(list<Vertex_u>** vertexes,uint32_t *size);
     uint64_t get_number(string s1,string s2);
 	//缓存中查询元数据，不存在，则返回空串
 	string cache_get_meta(string graph_name,uint32_t key);
@@ -102,6 +103,12 @@ public:
 	socket_t *sock;
 	string graph_name;
         uint32_t *nums;
+};
+class Ip_All_Vertex{
+public:
+	socket_t *sock;
+	string graph_name;
+	list<Vertex_u>* vertexes;
 };
 //添加顶点的线程函数，不能写成成员函数，成员函数不能作为线程入口
 void* thread_add_edges(void* args);

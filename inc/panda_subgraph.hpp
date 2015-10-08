@@ -99,6 +99,8 @@ public:
 	b_type index_edge(Vertex* v,v_type id,t_type ts,b_type num,char is_repeat=0,char is_hash=0);
 	//遍历边块，返回边要插入的块
 	b_type not_index_edge(Vertex* v,v_type id,t_type ts,b_type num,char is_repeat=0,char is_hash=0);
+	//获取子图所有的顶点
+	int read_all_vertex(list<Vertex_u>& vertexes,char is_hash=0);
 	//读取两个顶点之间的所有边，源顶点不存在，则会返回1，源顶点存在则返回0
 	int read_edges(v_type s_id,v_type d_id,list<Edge_u>& edges,char is_hash=0);
         //读取两个顶点之间的指定属性的所有边，源顶点不存在，则会返回1，源顶点存在则返回0

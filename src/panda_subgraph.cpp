@@ -12,7 +12,7 @@ Vertex::Vertex(Vertex_u v){
 }
 Vertex_u Vertex::to_vertex_u(){
     string tmp(nick_name);
-    Vertex_u v(id,tmp);
+    Vertex_u v(id,tmp,size);
     return v;
 }
 Edge::Edge(Edge_u e){
@@ -537,17 +537,17 @@ Vertex Subgraph::get_vertex(v_type id,char is_hash){
 //2 涉及到顶点操作的都是串行，因为顶点的缓冲区还没有加锁机制来实现并发
 Vertex* Subgraph::get_vertex_raw(v_type id,b_type *num,bool& status,char is_hash){
 	//通过索引，寻找顶点所在的块
-      	if( Trylock(vertex_lock)!=0){
-			status=false;
-			return NULL;
-		} 
+    if( Trylock(vertex_lock)!=0){
+		status=false;
+		return NULL;
+	} 
 	status=true;
 	list<b_type> r;
 	vertex_index.find_values(id,r);
 	if(r.size()!=1) {
-                Unlock(vertex_lock);
-                return NULL;//如果没有该顶点存在或者顶点有多个，则返回空指针
-        }
+         Unlock(vertex_lock);
+         return NULL;//如果没有该顶点存在或者顶点有多个，则返回空指针
+    }
 	b_type p=*(r.begin());
 	BlockHeader<Vertex> *b=(BlockHeader<Vertex> *)get_block(p,0,is_hash);
 	uint32_t i=b->list_head;
@@ -822,21 +822,41 @@ b_type Subgraph::index_edge(Vertex* v,v_type id,t_type ts,b_type num,char is_rep
 //根据顶点号，查询顶点信息，源顶点不存在则返回1，存在返回0,没有获得锁则返回2
 //1，读顶点都是串行操作
 int Subgraph::read_vertex(v_type id,Vertex_u& vertex_u,uint32_t* num,char is_hash){
-        b_type num1;
-		bool status;
+    b_type num1;
+	bool status;
 	Vertex* v=get_vertex_raw(id,&num1,status,is_hash);//得到顶点
-        if(v==NULL){
-			if(status)
-			 	return 1;
-			else
-				return 2;
-		}
-        vertex_u=v->to_vertex_u();
-        (*num)=v->size;
-        unlock2num(num1);
-        return 0;       
+    if(v==NULL){
+		if(status)
+			return 1;
+		else
+			return 2;
+	}
+    vertex_u=v->to_vertex_u();
+    (*num)=v->size;
+    unlock2num(num1);
+    return 0;       
 }
-
+//读取所有的顶点
+int Subgraph::read_all_vertex(list<Vertex_u>& vertexes,char is_hash){
+	//也要用到顶点锁，因为要操纵到顶点块
+	Lock(vertex_lock);
+	//遍历所有顶点块
+	b_type p=head.vertex_head;
+	BlockHeader<Vertex>* v_block=NULL;
+	while(p!=INVALID_BLOCK){
+		v_block=(BlockHeader<Vertex>*)get_block(p,0,is_hash);
+		uint32_t p1=v_block->list_head;
+		//遍历块中的每一个顶点
+		while(p1!=INVALID_INDEX){
+			vertexes.push_back(v_block->data[p1].content.to_vertex_u());
+			p1=v_block->data[p1].next;
+		}
+		p=v_block->next;
+		unlock2block(v_block);	
+	}
+	Unlock(vertex_lock);
+	return 0;	
+}
 //根据源顶点和目的顶点，读取所有的边，结果存入到list结构中，源顶点不存在返回1，存在返回0
 //如果顶点没有索引，则遍历所有边块，有索引则根据索引查找
 //2 读操作的原则是，在获取到了下一个块的锁之后，才能释放上一个块的锁，这种有序性，使得读一个顶点的过程中，还可以并发写一个顶点
