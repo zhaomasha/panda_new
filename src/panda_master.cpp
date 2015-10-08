@@ -122,8 +122,10 @@ void* switcher(void *args)
 	socket_t gather_sock(ctx,ZMQ_ROUTER);
 	string master_ip(getenv("MASTER_IP"));
 	string master_port(getenv("MASTER_PORT"));
-        string endpoint="tcp://"+master_ip+":"+master_port;
+    string endpoint="tcp://"+master_ip+":"+master_port;
+    cout << "to bind"<< endl;
 	gather_sock.bind(endpoint.c_str());
+    cout << "master bind success" << endl;
 	socket_t scatter_sock(ctx,ZMQ_DEALER);	
 	scatter_sock.bind("inproc://scatter");
 	proxy(gather_sock,scatter_sock,NULL);
