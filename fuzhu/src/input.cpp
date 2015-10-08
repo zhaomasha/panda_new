@@ -3,6 +3,7 @@
   参数1是图的名字，参数2是每次分批操作的数量
 */
 #include"panda_client.hpp"
+
 using namespace std;
 int main(int argc,char* argv[])
 {
