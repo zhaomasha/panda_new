@@ -10,6 +10,7 @@ all: $(targets)
 
 
 ../bin/input: input.cpp
+	mkdir -p ../bin
 	g++ $(cppflags) $(headers) $(libs) -o $@ $^ 
 
 ../bin/input_new: input_new.cpp
