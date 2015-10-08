@@ -174,7 +174,7 @@ int main(){
 	//初始化负载，如果负载文件不存在，则会创建，然后初始化内存负载为各个节点是0，负载文件存在，则根据文件初始化内存中的负载
 	bal=new balance();
 	bal->init();
-	//bal->print();	
+	bal->print();	
 	//设置信号函数
 	signal(SIGTERM,kill_func);
 	signal(SIGINT,kill_func);
