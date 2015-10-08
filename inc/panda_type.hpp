@@ -5,15 +5,17 @@
 class Vertex_u{
 public:
 	v_type id;
-        char nick_name[NICKNAME_LEN+1];
-	Vertex_u(v_type id,string nick_name){
+    char nick_name[NICKNAME_LEN+1];
+	uint32_t edge_num;	
+	Vertex_u(v_type id,string nick_name,uint32_t size){
 		this->id=id;
-                if(nick_name.length()>NICKNAME_LEN){
-                    //如果blog_id的长度超过规定值了，就截取规定值的长度
-                    strcpy(this->nick_name,nick_name.substr(0,NICKNAME_LEN).c_str());
-                }else{
-                    strcpy(this->nick_name,nick_name.c_str());
-                }
+        if(nick_name.length()>NICKNAME_LEN){
+        	//如果blog_id的长度超过规定值了，就截取规定值的长度
+            strcpy(this->nick_name,nick_name.substr(0,NICKNAME_LEN).c_str());
+        }else{
+            strcpy(this->nick_name,nick_name.c_str());
+        }
+		edge_num=size;
 	}
 	Vertex_u(){}	
 };
@@ -22,7 +24,7 @@ public:
 	v_type s_id;//源顶点的id
 	v_type d_id;//目标顶点的id
 	char blog_id[BLOGID_LEN+1];
-        int type;
+    int type;
 	t_type timestamp;//时间戳
 	Edge_u(v_type s_id,v_type d_id,string blog_id,int type,t_type timestamp=time(NULL)){
 		this->s_id=s_id;

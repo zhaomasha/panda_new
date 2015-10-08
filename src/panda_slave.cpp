@@ -138,17 +138,29 @@ void handler_get_vertex_num(Replier &rep){
         ostringstream stream_num;
 	stream_num<<num;
 	string string_num=stream_num.str();
-	rep.ans(STATUS_OK,string_num.c_str(),string_num.size()+1);
+	rep.ans(STATUS_OK,string_num.c_str(),string_num.size()+1); 
 }
 //处理查找该子图的某个图的边数目的函数
 void handler_get_edge_num(Replier &rep){
 	proto_graph *req_arg=(proto_graph*)rep.get_arg();
-        Graph *graph=graph_set->get_graph(req_arg->graph_name);
-        uint32_t num=graph->edge_num; 
-        ostringstream stream_num;
+    Graph *graph=graph_set->get_graph(req_arg->graph_name);
+    uint32_t num=graph->edge_num; 
+    ostringstream stream_num;
 	stream_num<<num;
 	string string_num=stream_num.str();
 	rep.ans(STATUS_OK,string_num.c_str(),string_num.size()+1);
+}
+//处理查找该节点所有子图的所有顶点
+void handler_read_all_vertex(Replier &rep){
+	proto_graph *req_arg=(proto_graph*)rep.get_arg();
+    Graph *graph=graph_set->get_graph(req_arg->graph_name);
+	list<Vertex_u> vertexes;
+	//遍历所有子图
+	unordered_map<uint32_t,Subgraph*>::iterator it;
+	for(it=graph->sgs.begin();it!=graph->sgs.end();it++){
+		it->second->read_all_vertex(vertexes);
+	}
+	rep.ans(STATUS_OK,vertexes);
 }
 //读取两个顶点之间的所有边，如果边的源顶点不存在，则返回错误的状态，如果成功插入，则返回ok状态
 void handler_read_edge(Replier &rep){
@@ -328,20 +340,24 @@ void * worker(void* args)
 					handler_read_two_edges(rep);			
 					break;
 				}
-                                case CMD_READ_EDGE_INDEX:{
+                case CMD_READ_EDGE_INDEX:{
 					handler_read_edge_index(rep);			
 					break;
 				}
-                                case CMD_GET_ALL_VERTEX_NUM:{
+                case CMD_GET_ALL_VERTEX_NUM:{
 					handler_get_vertex_num(rep);			
 					break;
 				}
-								case CMD_GET_ALL_EDGE_NUM:{
+			    case CMD_GET_ALL_EDGE_NUM:{
 					handler_get_edge_num(rep);			
 					break;
 				}
-                                case CMD_READ_VERTEX:{
+                case CMD_READ_VERTEX:{
 					handler_read_vertex(rep);			
+					break;
+				}
+				case CMD_GET_ALL_VERTEX:{
+					handler_read_all_vertex(rep);
 					break;
 				}
 			}

@@ -10,12 +10,12 @@ public:
 	string base_dir;//图的目录
 	unordered_map<uint32_t,Subgraph*> sgs;//图的子图集，key是子图号，用hash的方式分图，key就是模
 	uint32_t block_size;//该图的块大小
-        uint32_t vertex_num;//该图的顶点数目，每次系统启动的时候向子图收集而来，每次添加顶点的时候更新这个变量，不需要存入文件中
-        uint64_t edge_num;//该图的边数目，每次系统启动的时候向子图收集而来，每次添加顶点的时候更新这个变量，不需要存入文件中
-        Btree<Key,Value> edge_index;//边属性的索引，一个节点所有子图共享一个索引
-        lock_t *index_lock;//边索引的锁，查询图的索引是串行
-        lock_t *vertex_num_lock;//顶点数目的锁
-        lock_t *edge_num_lock;//边数目的锁
+    uint32_t vertex_num;//该图的顶点数目，每次系统启动的时候向子图收集而来，每次添加顶点的时候更新这个变量，不需要存入文件中
+    uint64_t edge_num;//该图的边数目，每次系统启动的时候向子图收集而来，每次添加顶点的时候更新这个变量，不需要存入文件中
+    Btree<Key,Value> edge_index;//边属性的索引，一个节点所有子图共享一个索引
+    lock_t *index_lock;//边索引的锁，查询图的索引是串行
+    lock_t *vertex_num_lock;//顶点数目的锁
+    lock_t *edge_num_lock;//边数目的锁
 	~Graph();//析构函数，释放所有的子图
 	bool flush();
       	void init(string dir,uint32_t blocksize=atoi(getenv("BLOCKSZ")));//初始化子图，即初始化子图目录里面所有的子图文件
