@@ -88,7 +88,7 @@ void handler_add_edge(Replier &rep){
         Graph *graph=graph_set->get_graph(req_arg->graph_name);
         Key k(req_arg->edge.blog_id);
         Value v(req_arg->edge.s_id,req_arg->edge.d_id);
-        graph->add_edge_index(k,v); 
+        //graph->add_edge_index(k,v); 
         graph_set->get_graph(req_arg->graph_name)->edge_num_increment();
 		rep.ans(STATUS_OK,"ok",strlen("ok")+1);
 	}
@@ -111,7 +111,7 @@ void handler_add_edges(Replier &rep){
                 Graph *graph=graph_set->get_graph(graph_name);
                 Key k((*it).blog_id);
                 Value v((*it).s_id,(*it).d_id);
-                graph->add_edge_index(k,v); 
+                //graph->add_edge_index(k,v); 
                	graph_set->get_graph(graph_name)->edge_num_increment();
                 num++;//添加成功，记录一笔
 			}

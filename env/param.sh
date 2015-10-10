@@ -16,7 +16,7 @@ export DIR_NAME="/home/zhaomasha/graphdata"
 export BAL_DIR_NAME=$DIR_NAME"/panda_bal"
 export SERVER_DIR_NAME=$DIR_NAME"/panda_server"
 
-export HASH_NUM="100" 
+export HASH_NUM="3" 
 export SLAVE_THREAD_NUM="10" 
 export VERTEX_INDEX_FILENAME="vertex.index"
 export EDGE_INDEX_FILENAME="edge.index"
