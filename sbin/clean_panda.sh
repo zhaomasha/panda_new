@@ -15,6 +15,11 @@ echo $SLAVE_IP | tr ':' '\n' | while read slave;do
 	ssh -n $slave "rm -rf ${DIR_NAME};rm -rf ${BASE_DIR}/logs"
 done
 
+echo "for master:"$MASTER_IP;
+rm -rf ${DIR_NAME};rm -rf ${BASE_DIR}/logs
+
+rm -rf ${dir_name};
+
 echo "panda clean";
 
 set +x

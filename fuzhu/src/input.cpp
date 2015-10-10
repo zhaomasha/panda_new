@@ -3,6 +3,7 @@
   参数1是图的名字，参数2是每次分批操作的数量
 */
 #include"panda_client.hpp"
+
 using namespace std;
 int main(int argc,char* argv[])
 {
@@ -42,7 +43,7 @@ int main(int argc,char* argv[])
          v_type id=atol(data.c_str());
          getline(fin,data);
          string nickname=data;
-         Vertex_u v(id,nickname);
+         Vertex_u v(id,nickname,30);
          vs.push_back(v);
          r++;
          if(r==pack_num){

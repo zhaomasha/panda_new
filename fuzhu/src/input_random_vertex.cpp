@@ -40,7 +40,7 @@ int main(int argc,char* argv[])
     while(v_num<=end_num){
          v_type id=v_num;
          string nickname="尼玛";
-         Vertex_u v(id,nickname);
+         Vertex_u v(id,nickname,30);
          vs.push_back(v);
          r++;
          if(r==pack_num){

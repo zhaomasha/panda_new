@@ -122,8 +122,10 @@ void* switcher(void *args)
 	socket_t gather_sock(ctx,ZMQ_ROUTER);
 	string master_ip(getenv("MASTER_IP"));
 	string master_port(getenv("MASTER_PORT"));
-        string endpoint="tcp://"+master_ip+":"+master_port;
+    string endpoint="tcp://"+master_ip+":"+master_port;
+    cout << "to bind"<< endl;
 	gather_sock.bind(endpoint.c_str());
+    cout << "master bind success" << endl;
 	socket_t scatter_sock(ctx,ZMQ_DEALER);	
 	scatter_sock.bind("inproc://scatter");
 	proxy(gather_sock,scatter_sock,NULL);
@@ -174,7 +176,7 @@ int main(){
 	//初始化负载，如果负载文件不存在，则会创建，然后初始化内存负载为各个节点是0，负载文件存在，则根据文件初始化内存中的负载
 	bal=new balance();
 	bal->init();
-	//bal->print();	
+	bal->print();	
 	//设置信号函数
 	signal(SIGTERM,kill_func);
 	signal(SIGINT,kill_func);
