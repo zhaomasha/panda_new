@@ -2,6 +2,7 @@
    读取某个顶点的信息
    参数1是图的名字，参数2是顶点的id
 */
+
 #include"panda_client.hpp"
 using namespace std;
 int main(int argc,char* argv[])
