@@ -8,5 +8,5 @@
 
 . ../../env/param.sh
 . ./prepare.sh
-../bin/input_random_vertex 1 1000000000 1000 > insert.log 
-../bin/input_random_edge 1 1000000000 1000 >> insert.log
+../bin/input_random_vertex 1 100000000 1000 > insert.log 
+../bin/input_random_edge 1 100000000 1000 >> insert.log

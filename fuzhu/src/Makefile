@@ -4,7 +4,7 @@ libs=-lpanda -L ../../lib
 
 bin_dir=bin
 
-targets=../bin/input ../bin/input_new ../bin/input_random_edge ../bin/input_random_vertex ../bin/read_edge ../bin/read_edge_on_attr ../bin/read_vertex ../bin/read_vertex_number ../bin/read_vertex_random
+targets=../bin/input ../bin/input_new ../bin/input_random_edge ../bin/input_random_vertex ../bin/read_edge ../bin/read_edge_on_attr ../bin/read_vertex ../bin/read_vertex_number ../bin/read_vertex_random ../bin/read_all_vertex
 
 all: $(targets)
 
@@ -37,6 +37,8 @@ all: $(targets)
 ../bin/read_vertex_random: read_vertex_random.cpp
 	g++ $(cppflags) $(headers) $(libs) -o $@ $^ 
 
+../bin/read_all_vertex:read_all_vertex.cpp
+	g++ $(cppflags) $(headers) $(libs) -o $@ $^
 
 
 .PHONY: clean
