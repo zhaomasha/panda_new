@@ -7,6 +7,6 @@
 #!/bin/bash
 
 . ./prepare.sh
-../bin/read_vertex test 10080
-#../bin/input_random_vertex 1 100000000 1000 > insert.log 
-#../bin/input_random_edge 1 100000000 1000 >> insert.log
+#../bin/read_vertex test 10080
+../bin/input_random_vertex 1 10000000 1000 > insert.log 
+../bin/input_random_edge 1 10000000 1000 >> insert.log
