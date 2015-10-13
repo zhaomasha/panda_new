@@ -39,8 +39,7 @@ int main(int argc,char* argv[])
 	int v_num=start_num;
     while(v_num<=end_num){
          v_type id=v_num;
-         string nickname="fun_plus_";
-         nickname += v_num;
+         string nickname="funny";
          Vertex_u v(id,nickname,30);
          vs.push_back(v);
          r++;
