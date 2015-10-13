@@ -1,0 +1,28 @@
+#!/usr//bin/expect -f
+#########################################################################
+# File Name: autoscp.exp
+# Author: wangxin
+# mail: wangxin4@iie.ac.cn
+# Created Time: Tue 13 Oct 2015 06:53:08 PM CST
+# Description: 
+#########################################################################
+
+
+set timeout 10  
+set username [lindex $argv 0]  
+set password [lindex $argv 1]  
+set hostname [lindex $argv 2]  
+set srcfile  [lindex $argv 3]
+set dstfile  [lindex $argv 4]
+spawn scp $srcfile $username@$hostname:$dstfile
+expect {
+    "yes/no" {
+        send "yes\r"
+        exp_continue
+    }
+    "password:"  {
+        send "$password\r" 
+    }
+}
+expect eof
+
