@@ -10,5 +10,7 @@ logs/
 *.log
 nohup.out
 *.config
+*envfiles
+*.pyc
 !deploy/config/sample_sys.config
 !deploy/config/sample_deploy.config
