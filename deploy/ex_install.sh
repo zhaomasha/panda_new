@@ -8,17 +8,17 @@
 
 #usage: ex_install.sh dest_host user_name
 #
-if [ $# != 2 ]
+if [ $# != 3 ]
 then
     echo "invalid parameter numer $#"
-    echo "usage: ex_install.sh dest_host user_name"
+    echo "usage: ex_install.sh dest_host user_name install_dir"
     exit 1
 fi
 
 dst_host=$1
 usr_name=$2
+install_dir=$3
 script_dir=`dirname $BASH_SOURCE`
-install_dir='/home/wangxin/panda_new/install'
 
 zmq_version=3.2.3
 zmq_tar_name=zeromq-3.2.3.tar.gz

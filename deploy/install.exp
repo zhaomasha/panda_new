@@ -11,7 +11,8 @@ set timeout 10
 set username [lindex $argv 0]  
 set password [lindex $argv 1]  
 set hostname [lindex $argv 2]  
-spawn ./ex_install.sh $hostname $username
+set install_dir [lindex $argv 3]
+spawn ./ex_install.sh $hostname $username $install_dir
 expect {
     "yes/no" {
         send "yes\r"

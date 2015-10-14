@@ -32,9 +32,11 @@ class Deployor(object):
         os.system(os.path.join(base_dir,"base_install.sh"))
         username = self.deploy_configer.get("HOST_INFO","rootname")
         passwd = self.deploy_configer.get("HOST_INFO","rootpasswd")
+        install_dir = self.deploy_configer.get("HOST_INFO","dst_home_dir")
+        install_dir = os.path.join(install_dir,"install")
         for host in self.slave_hosts + [self.master_host]:
             cmd = os.path.join(base_dir,"install.exp")
-            cmd = cmd + " %s %s %s"%(username, passwd, host)
+            cmd = cmd + " %s %s %s"%(username, passwd, host, install_dir)
             os.system(cmd)
 
     def __copyfiles(self,dst_host,user_name, passwd, dst_dirs,dst_files ):
