@@ -23,6 +23,7 @@ int main(int argc,char* argv[])
     list<Vertex_u>* vertexes;
     uint32_t size;
     c.read_all_vertex(&vertexes,&size);
+    /*
     uint32_t all_num=0;
     for(int i=0;i<size;i++){
         all_num+=vertexes[i].size();
@@ -32,4 +33,5 @@ int main(int argc,char* argv[])
 		}
     }
     cout<<"graph "<<graph_name<<"'s vertex number:"<<all_num<<endl;
+    */
 }
