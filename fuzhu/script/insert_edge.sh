@@ -1,12 +1,13 @@
 #########################################################################
-# File Name: tmp.sh
+# File Name: insert_edge.sh
 # Author: wangxin
 # mail: wangxin4@iie.ac.cn
-# Created Time: 2015年09月29日 星期二 18时02分52秒
+# Created Time: Wed 14 Oct 2015 09:55:19 AM CST
+# Description:
 #########################################################################
 #!/bin/bash
 
-. ./prepare.sh
-#../bin/read_vertex test 10080
-../bin/input_random_vertex 1 10000000 1000 > insert.log 
+BASE_DIR=`dirname $BASH_SOURCE`
+. $BASE_DIR/prepare.sh
+
 ../bin/input_random_edge 1 10000000 1000 >> insert.log
