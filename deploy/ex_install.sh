@@ -1,10 +1,10 @@
+#!/bin/bash
 #########################################################################
 # File Name: ex_install.sh
 # Author: wangxin
 # mail: wangxin4@iie.ac.cn
 # Created Time: Mon 12 Oct 2015 11:52:45 AM CST
 #########################################################################
-#!/bin/bash
 
 #usage: ex_install.sh dest_host user_name
 #
@@ -32,7 +32,16 @@ zmq_tag=`ssh $usr_name@$dst_host 'ls -l /usr/local/lib*|grep zmq|wc -l'`
 if [ $zmq_tag == 0 ]
 then
     scp $zmq_tar_path  $usr_name@$dst_host:$install_dir
-    ssh $usr_name@$dst_host "cd $install_dir && tar zxvf $install_dir/$zmq_tar_name&& cd zeromq-$zmq_version&& ./configure&& make&& make install && make clean && cd $install_dir && rm -fr $install_dir/zeromq-$zmq_version"
+    echo "install file copied"
+    ssh $usr_name@$dst_host "cd $install_dir && tar zxf $install_dir/$zmq_tar_name"
+    echo "install file untar"
+    ssh $usr_name@$dst_host "cd $install_dir/zeromq-$zmq_version&& ./configure"
+    echo "install file configure"
+    ssh $usr_name@$dst_host "cd $install_dir/zeromq-$zmq_version&& make"
+    echo "install file make"
+    ssh $usr_name@$dst_host "cd $install_dir/zeromq-$zmq_version&& make install "
+    echo "install file install"
+    ssh $usr_name@$dst_host "cd $install_dir/zeromq-$zmq_version&& make clean && cd $install_dir && rm -fr $install_dir/zeromq-$zmq_version"
 else
     echo "zmq alread installed on $host"
 fi

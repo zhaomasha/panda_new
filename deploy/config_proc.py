@@ -52,7 +52,7 @@ class DGSSConfiger(object):
                     slave_ips = value.split()
                     value = ':'.join(slave_ips)
                 envfile.write("export %s='%s'\n"%(option.upper(),value))
-        envfile.write("export LOCAL_IP=%s"%dst_host)
+        envfile.write("export LOCAL_IP='%s'"%dst_host)
         envfile.close()
 
     def gen_env_files(self, dst_dir):

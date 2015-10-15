@@ -32,11 +32,11 @@ class Deployor(object):
         os.system(os.path.join(base_dir,"base_install.sh"))
         username = self.deploy_configer.get("HOST_INFO","rootname")
         passwd = self.deploy_configer.get("HOST_INFO","rootpasswd")
-        install_dir = self.deploy_configer.get("HOST_INFO","dst_home_dir")
+        install_dir = self.deploy_configer.get("FILES","dst_home_dir")
         install_dir = os.path.join(install_dir,"install")
         for host in self.slave_hosts + [self.master_host]:
             cmd = os.path.join(base_dir,"install.exp")
-            cmd = cmd + " %s %s %s"%(username, passwd, host, install_dir)
+            cmd = cmd + " %s %s %s %s"%(username, passwd, host, install_dir)
             os.system(cmd)
 
     def __copyfiles(self,dst_host,user_name, passwd, dst_dirs,dst_files ):
@@ -60,8 +60,8 @@ class Deployor(object):
         envfile_dir = self.deploy_configer.get("FILES","envfile_dir_src")
         self.sys_configer.gen_env_files(envfile_dir)
         
-        username = self.deploy_configer.get("HOST_INFO","username")
-        passwd = self.deploy_configer.get("HOST_INFO","userpasswd")
+        username = self.deploy_configer.get("HOST_INFO","rootname")
+        passwd = self.deploy_configer.get("HOST_INFO","rootpasswd")
 
         #copy file for master
         dst_dirs = self.deploy_configer.get("FILES", "dst_dirs_master").split()
@@ -96,6 +96,13 @@ class Deployor(object):
         self.__file_deploy()
 
 if __name__ == "__main__":
-    dp = Deployor('config/sample_sys.config','config/sample_deploy.config')
+    if len(sys.argv) != 3:
+        print "invalid arg number ",len(sys.argv)
+        print "usage: deploy.py system_config_path  deploy_config_path"
+        sys.exit(1)
+    sys_config_path = sys.argv[1]
+    deploy_config_path = sys.argv[2]
+
+    dp = Deployor(sys_config_path, deploy_config_path)
     dp.deploy()
 

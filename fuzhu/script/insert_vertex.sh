@@ -11,4 +11,6 @@
 BASE_DIR=`dirname $BASH_SOURCE`
 . $BASE_DIR/prepare.sh
 
-../bin/input_random_vertex 1 10000000 1000 > insert.log 
+min=1
+max=10000
+../bin/input_random_vertex $min $max 1000 > insert.log 
