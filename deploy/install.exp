@@ -7,12 +7,13 @@
 # Description: 
 #########################################################################
 
-set timeout 600
+set timeout 3600
 set username [lindex $argv 0]  
 set password [lindex $argv 1]  
 set hostname [lindex $argv 2]  
 set install_dir [lindex $argv 3]
-spawn ./ex_install.sh $hostname $username $install_dir
+set base_dir [lindex $argv 4]
+spawn $base_dir/ex_install.sh $hostname $username $install_dir
 expect {
     "yes/no" {
         send "yes\r"

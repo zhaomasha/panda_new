@@ -35,7 +35,7 @@ class Deployor(object):
         install_dir = self.deploy_configer.get("FILES","dst_home_dir")
         install_dir = os.path.join(install_dir,"install")
         for host in self.slave_hosts + [self.master_host]:
-            cmd = os.path.join(base_dir,"install.exp")
+            cmd = os.path.join(base_dir,"install.sh")
             cmd = cmd + " %s %s %s %s"%(username, passwd, host, install_dir)
             os.system(cmd)
 
