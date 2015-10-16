@@ -5,6 +5,8 @@
 bin/panda_*
 lib/*.so
 fuzhu/bin/
+fuzhu/data/*
+fuzhu/log/*
 data/
 logs/
 *.log

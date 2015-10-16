@@ -13,6 +13,9 @@ then
     exit 1
 fi
 
+CHOME=""
+ip_str="192.168.11.52:192.168.11.53:192.168.11.57"
+client_ips=""
 BASE_DIR=`dirname $BASH_SOURCE`
 . $BASE_DIR/prepare.sh
 

@@ -20,7 +20,7 @@ expect_tar_path=$script_dir/depend_ware/$expect_tar_name
 
 
 #install tcl
-tar zxf $tcl_tar_path
+tar zxf $tcl_tar_path -C $script_dir
 tcl_tag=`ls -l /usr/local/bin/ /usr/bin/|grep tcl|wc -l`
 if [ $tcl_tag == 0 ]
 then
@@ -37,7 +37,7 @@ fi
 expect_tag=`ls -l /usr/local/bin/ /usr/bin/|grep tcl|wc -l`
 if [ $expect_tag == 0 ]
 then
-    tar zxvf $expect_tar_path
+    tar zxf $expect_tar_path -C $script_dir
     cd  $script_dir/expect$expect_version
     ./configure --with-tclinclude=$script_dir/tcl$tcl_version/generic/ --with-tclconfig=/usr/local/lib/
     make
