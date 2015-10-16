@@ -11,8 +11,11 @@ base_dir=`dirname $BASH_SOURCE`
 
 username="root"
 passwd="111111"
-home_dir="/home/wangxin/panda"
+read home_dir < $base_dir/../config/client.path
 install_dir="$home_dir/install"
+env_dir="$home_dir/env"
+lib_dir="$home_dir/lib"
+client_dir="$home_dir/fuzhu"
 
 #create directory for install
 $base_dir/../../deploy/automkdir.exp $username $passwd "127.0.0.1" $install_dir
@@ -27,10 +30,16 @@ do
     $base_dir/../../deploy/automkdir.exp $username $passwd $ip $install_dir
     #install zmq
     $base_dir/../../deploy/install.sh $username $passwd $ip $install_dir
-
+    #copy files
+    $base_dir/../../deploy/autocmd.exp $username $passwd $ip "rm -fr $base_dir/../../env $env_dir"
+    $base_dir/../../deploy/autoscp.exp $username $passwd $ip $base_dir/../../env $env_dir
+    $base_dir/../../deploy/autocmd.exp $username $passwd $ip "rm -fr $base_dir/../../env $lib_dir"
+    $base_dir/../../deploy/autoscp.exp $username $passwd $ip $base_dir/../../lib $lib_dir
+    $base_dir/../../deploy/autocmd.exp $username $passwd $ip "rm -fr $base_dir/../../env $client_dir"
+    $base_dir/../../deploy/autoscp.exp $username $passwd $ip $base_dir/../../fuzhu $client_dir
     echo deploy $ip complete
 done<$base_dir/../config/client.ip
 
 
 
-echo hi
+echo client deploy all complete

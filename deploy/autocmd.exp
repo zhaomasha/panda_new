@@ -1,20 +1,19 @@
 #!/usr//bin/expect -f
 #########################################################################
-# File Name: autoscp.exp
+# File Name: ../../deploy/autocmd.exp
 # Author: wangxin
 # mail: wangxin4@iie.ac.cn
-# Created Time: Tue 13 Oct 2015 06:53:08 PM CST
+# Created Time: Fri 16 Oct 2015 09:46:09 AM CST
 # Description: 
 #########################################################################
 
 
-set timeout 10  
+set timeout -1
 set username [lindex $argv 0]  
 set password [lindex $argv 1]  
 set hostname [lindex $argv 2]  
-set srcfile  [lindex $argv 3]
-set dstfile  [lindex $argv 4]
-spawn scp -r $srcfile $username@$hostname:$dstfile
+set cmd  [lindex $argv 3]
+spawn ssh $username@$hostname $cmd
 expect {
     "yes/no" {
         send "yes\r"

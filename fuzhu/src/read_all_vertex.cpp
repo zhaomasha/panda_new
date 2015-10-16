@@ -26,7 +26,7 @@ int main(int argc,char* argv[])
 	long vt1=getTime();
     c.read_all_vertex(&vertexes,&size);
 	long vt2=getTime();
-    cout << "Speed of query all vertex of "<<graph_name << ":"<< (vt2-vt1) << "ms for ";
+    cout << "Speed of query all vertex of "<<graph_name << ": "<< (vt2-vt1) << " ms for ";
     uint32_t all_num=0;
     for(int i=0;i<size;i++){
         all_num+=vertexes[i].size();
