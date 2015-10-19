@@ -26,3 +26,4 @@ configuration:
     2.配置系统，按上面的说明配置
     3.sbin目录下面有启动脚本,和停止脚本,start_panda.sh stop_panda.sh 还有一个清空脚本，就是把数据全部删掉clean_panda.sh
     4.fuzhu目录下面有一些测试程序，和测试数据
+    5.deploy目录下为自动化部署相关内容
