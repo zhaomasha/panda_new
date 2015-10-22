@@ -6,6 +6,7 @@
 # Description:
 #########################################################################
 #!/bin/bash
+set -x
 
 base_dir=`dirname $BASH_SOURCE`
 
@@ -18,7 +19,7 @@ lib_dir="$home_dir/lib"
 client_dir="$home_dir/fuzhu"
 
 #create directory for install
-$base_dir/../../deploy/automkdir.exp $username $passwd "127.0.0.1" $install_dir
+#$base_dir/../../deploy/automkdir.exp $username $passwd "127.0.0.1" $install_dir
 
 #install tcl and expect
 $base_dir/../../deploy/base_install.sh
@@ -33,9 +34,14 @@ do
     #copy files
     $base_dir/../../deploy/autocmd.exp $username $passwd $ip "rm -fr $base_dir/../../env $env_dir"
     $base_dir/../../deploy/autoscp.exp $username $passwd $ip $base_dir/../../env $env_dir
-    $base_dir/../../deploy/autocmd.exp $username $passwd $ip "rm -fr $base_dir/../../env $lib_dir"
+    deploy_envfile_path=$base_dir/../../deploy/envfiles/${ip}.envfile
+    if [ -e $deploy_envfile_path ]
+    then
+        $base_dir/../../deploy/autoscp.exp $username $passwd $ip $deploy_envfile_path $env_dir/param.sh
+    fi
+    $base_dir/../../deploy/autocmd.exp $username $passwd $ip "rm -fr $base_dir/../../lib $lib_dir"
     $base_dir/../../deploy/autoscp.exp $username $passwd $ip $base_dir/../../lib $lib_dir
-    $base_dir/../../deploy/autocmd.exp $username $passwd $ip "rm -fr $base_dir/../../env $client_dir"
+    $base_dir/../../deploy/autocmd.exp $username $passwd $ip "rm -fr $base_dir/../../fuzhu $client_dir"
     $base_dir/../../deploy/autoscp.exp $username $passwd $ip $base_dir/../../fuzhu $client_dir
     echo deploy $ip complete
 done<$base_dir/../config/client.ip
