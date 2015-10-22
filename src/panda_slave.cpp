@@ -296,6 +296,14 @@ void handler_read_edge_index(Replier &rep){
 	rep.ans(STATUS_OK,edges);
 }
 
+char* cur_time_str(){
+    time_t t = time(0);
+    char *str = ctime(&t);
+    str[strlen(str)-1] = 0;
+    return str;
+}
+
+
 //工作线程的函数，每一个线程一个套接字
 void * worker(void* args)
 {
@@ -304,13 +312,13 @@ void * worker(void* args)
 		socket_t sock(ctx,ZMQ_REP);//创建线程的套接字
 		sock.connect("inproc://scatter");//inproc方式，一定要先bind
 		int flag=1;
-                cout<<"thread "<<pthread_self()<<"start"<<endl;
+        cout<<cur_time_str()<< ":"<< " thread "<<pthread_self()<<"start"<<endl;
 		while(flag){
-                        cout<<"thread "<<pthread_self()<<"waiting......"<<endl;
+            cout<<cur_time_str()<<":"<<" thread "<<pthread_self()<<" waiting......"<<endl;
 			Replier rep(sock);
 			//没有消息，会block在这
 			rep.parse_ask();
-			cout<<"thread "<<pthread_self()<<"->operation "<<rep.get_cmd()<<":"<<cmd_name[rep.get_cmd()]<<endl;
+			cout<<cur_time_str()<<":"<<" thread "<<pthread_self()<<"->operation "<<rep.get_cmd()<<":"<<cmd_name[rep.get_cmd()]<<endl;
 			switch(rep.get_cmd()){
 				case CMD_ADD_VERTEX:{
 					handler_add_vertex(rep);			
