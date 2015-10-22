@@ -13,6 +13,8 @@ user_name="wangxin"
 base_dir=`dirname $BASH_SOURCE`
 read home_dir < $base_dir/../config/client.path
 
+mkdir -p $base_dir/../log
+
 while read ip
 do 
     ssh -f  $user_name@$ip $home_dir/fuzhu/script/read_all_vertex.sh 0 > $base_dir/../log/$ip.readall.log
