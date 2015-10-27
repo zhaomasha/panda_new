@@ -7,7 +7,13 @@
 #########################################################################
 #!/bin/bash
 
+if [ $# != 2 ]
+then
+    echo "usage: insert_edge.sh start_id end_id"
+    exit 1
+fi
+
 BASE_DIR=`dirname $BASH_SOURCE`
 . $BASE_DIR/prepare.sh
 
-../bin/input_random_edge 1 10000000 1000 >> insert.log
+../bin/input_random_edge $1 $2 1000 >> insert.log

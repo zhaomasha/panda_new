@@ -7,10 +7,15 @@
 #########################################################################
 #!/bin/bash
 
+if [ $# != 2 ]
+then
+    echo "usage: insert_vertex.sh start_id end_id"
+    exit 1
+fi
 
 BASE_DIR=`dirname $BASH_SOURCE`
 . $BASE_DIR/prepare.sh
 
-min=1
-max=10000
+min=$1
+max=$2
 ../bin/input_random_vertex $min $max 1000 > insert.log 
