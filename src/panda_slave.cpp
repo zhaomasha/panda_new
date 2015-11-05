@@ -1,3 +1,4 @@
+#include <malloc.h>
 #include "panda_subgraph.hpp"
 #include "panda_graph_set.hpp"
 #include "panda_zmq.hpp"
