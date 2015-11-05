@@ -315,6 +315,7 @@ void * worker(void* args)
         cout<<cur_time_str()<< ":"<< " thread "<<pthread_self()<<"start"<<endl;
 		while(flag){
             cout<<cur_time_str()<<":"<<" thread "<<pthread_self()<<" waiting......"<<endl;
+			malloc_trim(0);
 			Replier rep(sock);
 			//没有消息，会block在这
 			rep.parse_ask();
