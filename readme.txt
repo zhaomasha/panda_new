@@ -1,5 +1,6 @@
 This is a ditributed system for graph storaging and querying,which is vertex centered model.
 
+
 configuration:
     配置参数说明(panda/env/param.sh)：
     panda_home 没用
