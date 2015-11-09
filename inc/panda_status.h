@@ -7,16 +7,18 @@
  * 
 ************************************************************************/
 
-#include<iostream>
-using namespace std;
+#include <string>
+#include <map>
+#include <vector>
+#include <set>
 
 class PandaStatus{
 public:
 	/*
-	 *  slave_hosts: slaves' host info(ip)'
+	 *  slave_hosts: slaves' host info(ip),keep the info to ckeck if all slaves is connected'
 	 *  _alive_threshold: the threshold time to jude if slave is alive, in second
 	 */
-	PandaStatus(std::vector<std::string> slave_hosts, unsigned int _alive_threshold ):alive_threshold(_){}
+	PandaStatus(std::vector<std::string> slave_hosts, int _alive_threshold ):alive_threshold(_);
 
 	/*
 	 *  _alive_threshold: the threshold time to jude if slave is alive, in second
@@ -56,8 +58,16 @@ public:
 private:
 	//alive info
 	std::vector<int> slave_alive_info;
-	//hosts info
+	//slave hosts' info, that keep connected with master
 	std::map<unsigned int, std::string> slave_hosts;
+	//slave hosts' initial info
+	std::set<std::string>  init_slaves;
+	//threshold to judge if a slave is alive.
+	int alive_threshold;
+
 
 	unsigned int get_slave_serial();
 };
+
+void* keep_status_slave(void *);
+void* keep_status_master(void*);
