@@ -2,7 +2,7 @@
  * File Name: panda_status.cpp
  * Author: wangxin
  * Mail: wangxin4@iie.ac.cn
- * Created Time: 2015年11月09日 星期一 16时00分06秒
+ * Created Time: 2015???1???9???星期一 16???0???6???
  * Description:
  * 
 ************************************************************************/
@@ -61,6 +61,10 @@ void PandaStatus::slave_time_lapse(unsigned int t)
 	}
 }
 
+void PandaStatus::update_slave(unsigned int serial_num)
+{
+	slave_alive_info[serial_num] = 0;
+}
 
 unsigned int PandaStatus::get_slave_serial()
 {
@@ -75,36 +79,135 @@ unsigned int PandaStatus::get_slave_serial()
 	return serial_num;
 }
 
-void* keep_status_slave(void *)
+void request_add_slave(Requester& req_master, int & slave_serial)
 {
-	int period=atoi(getenv("PERIOD_PANDASLAVE"));
-	int slave_serial = -1;
-	master_ip = getenv("MASTER_IP");
-	master_port = getenv("MASTER_PORT");
-	local_ip = getenv("LOCAL_IP");
-	try{
-		socket_t* s=new socket_t(*ctx,ZMQ_REQ);
-		string endpoint="tcp://"+master_ip+":"+master_port;
-		s->connect(endpoint.c_str());
-		while(1){
-			sleep(period);
-			Requester req_master(*s);
-			if( slave_serial<0 ){
-				int slave_serial;
-			}else{
-				
-			}
-			proto_graph_vertex_u mes_slave(graph_name,v);
-			req_slave.ask(CMD_ADD_VERTEX,&mes_slave,sizeof(proto_graph_vertex_u));
-			req_slave.parse_ans();
-			return req_slave.get_status();
-		}
-	}catch(zmq::error_t& err){
-		cout<<"thread " << pthread_self() << "error: "err.what();
+	std::string local_ip = getenv("LOCAL_IP");
+	proto_new_slave msg_new_slave(local_ip);
+	req_master.ask(CMD_ADD_SLAVE,&msg_new_slave,sizeof(proto_new_slave));     
+	req_master.parse_ans();
+	if( ret!= STATUS_OK){
+		std::cout << "error in adding slave,error code:"<<ret << std::endl;   
+		continue;
 	}
-
+	slave_serial = *(int*)req_master.get_data();
 }
-void* keep_status_master(void*)
+
+void request_keep_status(Requester& req_master, int slave_serial)
 {
 
+	proto_slave_status msg_slave_status(slave_serial);                        
+	req_master.ask(CMD_KEEP_SLAVE_STATUS,&msg_slave_status,sizeof(proto_slave_status));
+	req_master.parse_ans();
+	int ret = req_master.get_status();
+	if( ret != STATUS_OK ){
+		std::cout << "error in keeping status,error code:"<<ret << std::endl; 
+	}                                                                         
 }
+
+void* keep_status_slave(void*args)                                                           
+{ 
+	std::string master_ip = getenv("MASTER_IP");
+	std::string status_master_port = getenv("STATUS_MASTER_PORT");  
+	uint32_t period = atoi(getenv("SLAVE_PERIOD"))
+	uint32_t con_timeout = atoi(getenv("SLAVE_TIMEOUT"))
+    try{
+        socket_t* s=new socket_t(*ctx,ZMQ_REQ);
+		std::string endpoint="tcp://"+master_ip+":"+ status_master_port;
+        s->connect(endpoint.c_str());
+		int slave_serial = -1;
+		time_t start_time = time();
+        while(1){
+            sleep(period);
+            Requester req_master(*s);
+            if( slave_serial<0 ){
+				request_add_slave(req_master, slave_serial);
+				time_t past_time = time() - start_time;
+				if(past_time > con_timeout){
+					std::cout<<"thread " << pthread_self() << ": cannot connected to master"<<std::endl;
+				}
+            }else{
+				request_keep_status(req_master, slave_serial);
+            }
+        }
+		delete s;
+    }catch(zmq::error_t& err){
+        std::cout<<"thread " << pthread_self() << "error: " << err.what()<<std::endl;
+    }
+}
+
+void handle_add_slave(Replier &rep,PandaStatus* panda_status)
+{
+    proto_new_slave *msg_new_slave = rep.get_arg();
+	unsigned int serial_num;
+	int ret = panda_status->add_slave(msg_new_slave->ip, &serial_num);
+	if( ret != 0 ){
+		rep.ans(STATUS_OK,"vertex not exist",strlen("vertex not exist")+1);
+	}else{
+		rep.ans(STATUS_OK,&serial_num, sizeof(seial_num));
+	}
+}
+
+void handle_keep_slave_status(Replier & rep,PandaStatus* panda_status)
+{
+	proto_slave_status *msg_slave_status = rep.get_arg();
+	unsigned int serial_num = msg_slave_status->slave_serial;
+	panda_status->update_slave(serial_num);
+	rep.ans(STATUS_OK,"ok",strlen("ok")+1);
+}
+
+/*
+ * check all slaves' status, find the lost ones and inform back_controller
+ */
+void check_invalid_slave(PandaStatus* panda_status)
+{
+	std::vector<std::string> lost_slaves;
+	panda_status->check_alive(lost_slaves);
+	if(lost_slaves.size()>0){
+		for(uint32_t i=0; i<lost_slaves.size(); ++i){
+			std::cout << "Warning: Detected slave lost:" << lost_slaves[i] << std::endl;
+		}
+	}
+}
+
+void* keep_status_master(void* args)
+{                                                                                         
+	PandaStatus* panda_status = (PandaStatus*)args;
+	uint32_t period = atoi(getenv("MASTER_PERIOD"))
+    try{                                                                                  
+        socket_t s socket_t(*ctx,ZMQ_REP);                                           
+		std::string master_ip = getenv("MASTER_IP");
+		std::string status_master_port = getenv("STATUS_MASTER_PORT");
+		std::string endpoint="tcp://"+master_ip+":"+status_master_port;
+		s.setsockopt(ZMQ_RCVTIMEO, 1, sizeof(int));
+		s.bind(endpoint.c_str());
+		time_t start_time = time();
+		time_t past_time = 0;
+		time_t click_time = time();
+		while(1){
+			Replier rep(s);
+			rep.pars_ask();
+			uint32_t cmd_id = rep.get_cmd();
+			std::cout<< "operation " << cmd_id << ":" << cmd_name[cmd_id] << std::endl;
+			time_t cur_time = time();
+			panda_status->slave_time_lapse(cur_time-click_time);
+			click_time = cur_time;
+			switch(cmd_id){
+				case CMD_ADD_SLAVE:
+					handler_add_salve(rep, panda_status);
+					break;
+				case CMD_KEEP_SLAVE_STATUS:
+					handler_keep_slave_status(rep, panda_status);
+					break;
+			}
+			cur_time = time();
+			past_time = cur_time - start_time;
+			if( past_time > period){
+				check_invalid_slaves(panda_status);
+				start_time = cur_time;
+			}
+		}
+		
+    }catch(zmq::error_t& err){                                                            
+        std::cout<<"thread " << pthread_self() << "error: "err.what()<<std::endl;         
+    }                                                                                     
+}                        
