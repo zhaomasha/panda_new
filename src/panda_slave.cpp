@@ -4,16 +4,18 @@
 #include "panda_zmq.hpp"
 #include "panda_zmqproc.hpp"
 #include "panda_type.hpp"
+#include "panda_status.h"
 using namespace zmq;
 Graph_set *graph_set;
 const int thread_num=atoi(getenv("SLAVE_THREAD_NUM"));
-pthread_t thread_switcher,*threads;
+pthread_t thread_switcher,*threads, thread_status;
 //进程退出函数
 void kill_func(int signum){
 	delete graph_set;//释放空间，各种析构，把内存中的内容更新到文件中去
 	pthread_cancel(thread_switcher);//消灭所有线程，然后主线程则退出
         for(int i=0;i<thread_num;i++)
 	    pthread_cancel(threads[i]);
+	pthread_cancel(thread_status);
 }
 //处理添加顶点的函数，只要客户端把顶点的请求发过来了，说明该顶点就属于该slave节点了，这是一个异步的过程
 void handler_add_vertex(Replier &rep){
@@ -399,6 +401,7 @@ int main(){
 	//创建zmq的路由分发模式，创建工作线程
 	context_t ctx(16);
 	pthread_create(&thread_switcher,NULL,switcher,&ctx);
+	pthread_create(&thread_status,NULL,keep_status_slave,NULL);
 	sleep(1);
         threads=(pthread_t*)malloc(sizeof(pthread_t)*thread_num);
         for(int i=0;i<thread_num;i++)

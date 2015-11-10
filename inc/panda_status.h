@@ -18,12 +18,12 @@ public:
 	 *  slave_hosts: slaves' host info(ip),keep the info to ckeck if all slaves is connected'
 	 *  _alive_threshold: the threshold time to jude if slave is alive, in second
 	 */
-	PandaStatus(std::vector<std::string> slave_hosts, int _alive_threshold ):alive_threshold(_alive_threshold);
+	PandaStatus(std::vector<std::string> slave_hosts, int _alive_threshold=300 );
 
 	/*
 	 *  _alive_threshold: the threshold time to jude if slave is alive, in second
 	 */
-	PandaStatus(unsigned int _alive_threshold):alive_threshold(_alive_threshold){}
+	PandaStatus(unsigned int _alive_threshold=300):alive_threshold(_alive_threshold){}
 	~PandaStatus(){}
 
 	/*

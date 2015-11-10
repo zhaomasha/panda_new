@@ -3,12 +3,13 @@
 #include "panda_metadata.hpp"
 #include "panda_util.hpp"
 #include "panda_split_method.hpp"
+#include "panda_status.h"
 using namespace std;
 unordered_map<string,metadata*> metas;//ip和元数据对应表
 balance* bal; 
 string server_dir_name(getenv("SERVER_DIR_NAME"));
 string bal_dir_name(getenv("BAL_DIR_NAME"));
-pthread_t thread_worker,thread_switcher;
+pthread_t thread_worker,thread_switcher,thread_status;
 
 //进程退出函数
 void kill_func(int signum){	
@@ -20,6 +21,7 @@ void kill_func(int signum){
 	}	
 	pthread_cancel(thread_switcher);//消灭两个线程，然后主线程则退出
 	pthread_cancel(thread_worker);
+	pthread_cancel(thread_status);
 }
 
 //获取元数据的函数，根据图和顶点获取所在的节点，如果顶点所在的子图还没有分配节点，则根据负载来分配，虽然这时候该子图还没有数据，但是已经分配好了节点，这是个异步过程。客户端会先确保访问的图存在，所以这个函数能调用，就肯定能保证该图已经存在。为了保险起见，如果图不存在，则返回空串
@@ -177,12 +179,15 @@ int main(){
 	bal=new balance();
 	bal->init();
 	bal->print();	
+	//初始化状态维持
+	PandaStatus panda_status;
 	//设置信号函数
 	signal(SIGTERM,kill_func);
 	signal(SIGINT,kill_func);
 	//初始化工作环境
 	context_t ctx(16);
 	pthread_create(&thread_switcher,NULL,switcher,&ctx);
+	pthread_create(&thread_status,NULL,keep_status_master,&panda_status);
 	sleep(1);//首先要bind，所以sleep一会，让switcher线程把bind执行玩，再开worker线程中的connect操作
 	pthread_create(&thread_worker,NULL,worker,&ctx);
         cout<<"master success start!"<<endl;

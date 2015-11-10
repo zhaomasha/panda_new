@@ -1,4 +1,4 @@
-#!/usr//bin/expect -f
+#!/usr/local/bin/expect -f
 #########################################################################
 # File Name: autoscp.exp
 # Author: wangxin

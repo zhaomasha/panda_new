@@ -6,7 +6,7 @@
 #########################################################################
 #!/bin/bash
 
-script_dir=`dirname $BASH_SOURCE`
+script_dir=`dirname $0 |cd;pwd`
 echo $script_dir
 
 tcl_version=8.5.18
@@ -17,11 +17,12 @@ expect_version=5.45
 expect_tar_name=expect5.45.tar.gz
 expect_tar_path=$script_dir/depend_ware/$expect_tar_name
 
+set -x
 
 
 #install tcl
 tar zxf $tcl_tar_path -C $script_dir
-tcl_tag=`ls -l /usr/local/bin/ /usr/bin/|grep tcl|wc -l`
+tcl_tag=`ls -l /usr/local/bin/ /usr/bin/|grep " tcl"|wc -l`
 if [ $tcl_tag == 0 ]
 then
     cd $script_dir/tcl$tcl_version/unix
@@ -34,7 +35,7 @@ else
 fi
 
 #install expect
-expect_tag=`ls -l /usr/local/bin/ /usr/bin/|grep tcl|wc -l`
+expect_tag=`ls -l /usr/local/bin/ /usr/bin/|grep expect|wc -l`
 if [ $expect_tag == 0 ]
 then
     tar zxf $expect_tar_path -C $script_dir
