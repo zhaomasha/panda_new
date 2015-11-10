@@ -56,12 +56,12 @@ public:
 	void slave_time_lapse(unsigned int t);
 	
 private:
-	//alive info
+	//alive info, indicate unused with negative
 	std::vector<int> slave_alive_info;
 	//slave hosts' info, that keep connected with master
 	std::map<unsigned int, std::string> slave_hosts;
 	//slave hosts' initial info
-	std::set<std::string>  init_slaves;
+	std::set<std::string>  unconnected_slaves;
 	//threshold to judge if a slave is alive.
 	int alive_threshold;
 

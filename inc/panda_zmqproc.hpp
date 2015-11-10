@@ -7,10 +7,10 @@
 using namespace zmq;
 
 enum{ASK_CMD,ASK_ARG,ASK_SIZE};//请求包括两个字段，一个是命令，一个是参数，具体参数是什么，根据命令的类型决定
-enum{CMD_CREATE_GRAPH,CMD_GRAPH_IN,CMD_GET_META,CMD_ADD_VERTEX,CMD_ADD_EDGE,CMD_READ_EDGE,CMD_ADD_EDGES,CMD_ADD_VERTEXES,CMD_READ_EDGES,CMD_READ_TWO_EDGES,CMD_READ_EDGE_INDEX,CMD_GET_ALL_VERTEX_NUM,CMD_GET_ALL_EDGE_NUM,CMD_READ_VERTEX,CMD_FLUSH,CMD_GET_ALL_VERTEX,CMD_SIZE};//这是命令的类
-const string cmd_name[CMD_SIZE]={"create graph","graph is in?","get ip of vertex","add vertex","add edge","read all edge of a vertex","add many edges","add many vertexes","read many edges","read all edge between two vertex","read edges about attribute","get vertex num","get edge num","read vertex","flush","get all vertex"};
+enum{CMD_CREATE_GRAPH,CMD_GRAPH_IN,CMD_GET_META,CMD_ADD_VERTEX,CMD_ADD_EDGE,CMD_READ_EDGE,CMD_ADD_EDGES,CMD_ADD_VERTEXES,CMD_READ_EDGES,CMD_READ_TWO_EDGES,CMD_READ_EDGE_INDEX,CMD_GET_ALL_VERTEX_NUM,CMD_GET_ALL_EDGE_NUM,CMD_READ_VERTEX,CMD_FLUSH,CMD_GET_ALL_VERTEX,CMD_SIZE,CMDADD_SLAVE,CMD_KEEP_SLAVE_STATUS};//这是命令的类
+const string cmd_name[CMD_SIZE]={"create graph","graph is in?","get ip of vertex","add vertex","add edge","read all edge of a vertex","add many edges","add many vertexes","read many edges","read all edge between two vertex","read edges about attribute","get vertex num","get edge num","read vertex","flush","get all vertex","size","add slave","keep slave status"};
 enum{ANS_STATUS,ANS_DATA,ANS_SIZE};//响应包括两个字段，一个是状态，一个是数据，具体数据是什么，根据请求的类型决定
-enum{STATUS_OK,STATUS_EXIST,STATUS_NOT_EXIST,STATUS_V_EXIST,STATUS_V_NOT_EXIST,STATUS_E_EXIST};//这是相应的状态的类型
+enum{STATUS_OK,STATUS_EXIST,STATUS_NOT_EXIST,STATUS_V_EXIST,STATUS_V_NOT_EXIST,STATUS_E_EXIST,STATUS_NEW};//这是相应的状态的类型
 //下面都是通信的消息体
 //图的名字和顶点的id，向客户端请求元数据的消息体
 class proto_graph_vertex{
@@ -105,6 +105,23 @@ public:
 		memcpy(graph_name,name.c_str(),name.size()+1);
 	}
 };
+
+//新增slave
+class proto_new_slave{
+public:
+	char ip[20];
+	proto_new_slave(string ip){
+		memcpy(this->ip,ip.c_str(),ip.size()+1);
+	}
+}
+
+//维持slave状态信息
+class proto_slave_status{
+public:
+	unsigned int slave_serial;
+	proto_slave_status(unsigned int _slave_serial):slave_serial(_slave_serial){
+	}
+}
 
 //请求的类，包括两个消息体，用来接受响应的数据
 class Requester{
