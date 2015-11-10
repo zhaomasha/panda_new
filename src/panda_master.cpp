@@ -187,7 +187,7 @@ int main(){
 	//初始化工作环境
 	context_t ctx(16);
 	pthread_create(&thread_switcher,NULL,switcher,&ctx);
-	pthread_create(&thread_status,NULL,keep_status_master,&panda_status);
+	//pthread_create(&thread_status,NULL,keep_status_master,&panda_status);
 	sleep(1);//首先要bind，所以sleep一会，让switcher线程把bind执行玩，再开worker线程中的connect操作
 	pthread_create(&thread_worker,NULL,worker,&ctx);
         cout<<"master success start!"<<endl;
