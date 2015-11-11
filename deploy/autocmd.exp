@@ -1,0 +1,27 @@
+#!/usr//bin/expect -f
+#########################################################################
+# File Name: ../../deploy/autocmd.exp
+# Author: wangxin
+# mail: wangxin4@iie.ac.cn
+# Created Time: Fri 16 Oct 2015 09:46:09 AM CST
+# Description: 
+#########################################################################
+
+
+set timeout -1
+set username [lindex $argv 0]  
+set password [lindex $argv 1]  
+set hostname [lindex $argv 2]  
+set cmd  [lindex $argv 3]
+spawn ssh $username@$hostname $cmd
+expect {
+    "yes/no" {
+        send "yes\r"
+        exp_continue
+    }
+    "password:"  {
+        send "$password\r" 
+    }
+}
+expect eof
+

@@ -88,7 +88,7 @@ void handler_add_edge(Replier &rep){
         Graph *graph=graph_set->get_graph(req_arg->graph_name);
         Key k(req_arg->edge.blog_id);
         Value v(req_arg->edge.s_id,req_arg->edge.d_id);
-        graph->add_edge_index(k,v); 
+        //graph->add_edge_index(k,v); 
         graph_set->get_graph(req_arg->graph_name)->edge_num_increment();
 		rep.ans(STATUS_OK,"ok",strlen("ok")+1);
 	}
@@ -111,7 +111,7 @@ void handler_add_edges(Replier &rep){
                 Graph *graph=graph_set->get_graph(graph_name);
                 Key k((*it).blog_id);
                 Value v((*it).s_id,(*it).d_id);
-                graph->add_edge_index(k,v); 
+                //graph->add_edge_index(k,v); 
                	graph_set->get_graph(graph_name)->edge_num_increment();
                 num++;//添加成功，记录一笔
 			}
@@ -160,7 +160,19 @@ void handler_read_all_vertex(Replier &rep){
 	for(it=graph->sgs.begin();it!=graph->sgs.end();it++){
 		it->second->read_all_vertex(vertexes);
 	}
-	rep.ans(STATUS_OK,vertexes);
+	rep.ans(STATUS_OK,vertexes); 
+}
+//处理查找该节点所有子图的出度满足某个范围的所有顶点
+void handler_read_index_vertex(Replier &rep){
+	proto_graph_cd *req_arg=(proto_graph_cd*)rep.get_arg();
+    Graph *graph=graph_set->get_graph(req_arg->graph_name);
+	list<Vertex_u> vertexes;
+	//遍历所有子图
+	unordered_map<uint32_t,Subgraph*>::iterator it;
+	for(it=graph->sgs.begin();it!=graph->sgs.end();it++){
+		it->second->read_index_vertex(vertexes,req_arg->min,req_arg->max);
+	}
+	rep.ans(STATUS_OK,vertexes); 
 }
 //读取两个顶点之间的所有边，如果边的源顶点不存在，则返回错误的状态，如果成功插入，则返回ok状态
 void handler_read_edge(Replier &rep){
@@ -295,7 +307,55 @@ void handler_read_edge_index(Replier &rep){
               delete it_out->second;
 	rep.ans(STATUS_OK,edges);
 }
-
+//处理根据属性范围查找边的函数
+void handler_read_edge_index_range(Replier &rep){
+	proto_blog_id_range *req_arg=(proto_blog_id_range*)rep.get_arg();
+	list<Edge_u> edges;//存储返回的结果
+    Key k(req_arg->blog_id);
+    Graph *graph=graph_set->get_graph(req_arg->graph_name);
+    list<Value> vs;
+    unordered_map<int,unordered_map<int,int>*> repeated;//这个map用来查重，重复的两个顶点就不用再找边了
+    unordered_map<int,unordered_map<int,int>*>::iterator it_out;
+    unordered_map<int,int>::iterator it_in;
+    list<Value>::iterator it;
+    graph->get_edge_index(k,vs);
+    for(it=vs.begin();it!=vs.end();it++){
+               v_type s_id=(*it).s_id;
+               v_type d_id=(*it).d_id;
+               //查看
+               it_out=repeated.find(s_id);
+               int flag;//0代表没有重复，1代表重复
+               if(it_out==repeated.end()){
+                    unordered_map<int,int>*tmp=new unordered_map<int,int>();
+                    (*tmp)[d_id]=1;
+                    repeated[s_id]=tmp; 
+                    flag=0;
+               }else{
+                    unordered_map<int,int>*tmp=it_out->second;
+                    if(tmp->find(d_id)==tmp->end()){
+                         flag=0;
+                         (*tmp)[d_id]=1;
+                    }else{
+                         flag=1;
+                    }
+               }
+               if(flag==0){
+                    //顶点没有重复的时候就去查找边
+                    Subgraph *sub=graph_set->get_subgraph(req_arg->graph_name,s_id);
+					int res;
+					while(true){
+                    	res=sub->read_edges(s_id,d_id,req_arg->blog_id,edges);    
+						if(res==1||res==0){
+							break;
+						}
+					}
+               }
+        }
+        //释放内存
+        for(it_out=repeated.begin();it_out!=repeated.end();it_out++)
+              delete it_out->second;
+	rep.ans(STATUS_OK,edges);
+}
 //工作线程的函数，每一个线程一个套接字
 void * worker(void* args)
 {
@@ -304,9 +364,10 @@ void * worker(void* args)
 		socket_t sock(ctx,ZMQ_REP);//创建线程的套接字
 		sock.connect("inproc://scatter");//inproc方式，一定要先bind
 		int flag=1;
-                cout<<"thread "<<pthread_self()<<"start"<<endl;
+        cout<<"thread "<<pthread_self()<<"start"<<endl;
 		while(flag){
-                        cout<<"thread "<<pthread_self()<<"waiting......"<<endl;
+            cout<<"thread "<<pthread_self()<<"waiting......"<<endl;
+			malloc_trim(0);
 			Replier rep(sock);
 			//没有消息，会block在这
 			rep.parse_ask();
@@ -344,6 +405,10 @@ void * worker(void* args)
 					handler_read_edge_index(rep);			
 					break;
 				}
+				case CMD_GET_INDEX_RANGE_EDGE:{
+					handler_read_edge_index_range(rep);			
+					break;
+				}
                 case CMD_GET_ALL_VERTEX_NUM:{
 					handler_get_vertex_num(rep);			
 					break;
@@ -359,6 +424,9 @@ void * worker(void* args)
 				case CMD_GET_ALL_VERTEX:{
 					handler_read_all_vertex(rep);
 					break;
+				}
+				case CMD_GET_INDEX_VERTEX:{
+					handler_read_index_vertex(rep);
 				}
 			}
 		}

@@ -46,6 +46,7 @@
 #include<glob.h>
 #include<netdb.h>
 #include<string.h>
+#include<malloc.h>
 
 #include<arpa/inet.h>
 #include<pthread.h>

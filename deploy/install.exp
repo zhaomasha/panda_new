@@ -1,0 +1,31 @@
+#!/usr//bin/expect -f
+#########################################################################
+# File Name: install.exp
+# Author: wangxin
+# mail: wangxin4@iie.ac.cn
+# Created Time: Tue 13 Oct 2015 05:31:36 PM CST
+# Description: 
+#########################################################################
+
+set timeout 3600
+set username [lindex $argv 0]  
+set password [lindex $argv 1]  
+set hostname [lindex $argv 2]  
+set install_dir [lindex $argv 3]
+set base_dir [lindex $argv 4]
+spawn $base_dir/ex_install.sh $hostname $username $install_dir
+expect {
+    "yes/no" {
+        send "yes\r"
+        exp_continue
+    }
+    "password:"  {
+        send "$password\r" 
+        exp_continue
+    }
+    "install complete" {
+        send "ls"
+    }
+}
+expect eof
+

@@ -7,8 +7,8 @@
 using namespace zmq;
 
 enum{ASK_CMD,ASK_ARG,ASK_SIZE};//请求包括两个字段，一个是命令，一个是参数，具体参数是什么，根据命令的类型决定
-enum{CMD_CREATE_GRAPH,CMD_GRAPH_IN,CMD_GET_META,CMD_ADD_VERTEX,CMD_ADD_EDGE,CMD_READ_EDGE,CMD_ADD_EDGES,CMD_ADD_VERTEXES,CMD_READ_EDGES,CMD_READ_TWO_EDGES,CMD_READ_EDGE_INDEX,CMD_GET_ALL_VERTEX_NUM,CMD_GET_ALL_EDGE_NUM,CMD_READ_VERTEX,CMD_FLUSH,CMD_GET_ALL_VERTEX,CMD_SIZE};//这是命令的类
-const string cmd_name[CMD_SIZE]={"create graph","graph is in?","get ip of vertex","add vertex","add edge","read all edge of a vertex","add many edges","add many vertexes","read many edges","read all edge between two vertex","read edges about attribute","get vertex num","get edge num","read vertex","flush","get all vertex"};
+enum{CMD_CREATE_GRAPH,CMD_GRAPH_IN,CMD_GET_META,CMD_ADD_VERTEX,CMD_ADD_EDGE,CMD_READ_EDGE,CMD_ADD_EDGES,CMD_ADD_VERTEXES,CMD_READ_EDGES,CMD_READ_TWO_EDGES,CMD_READ_EDGE_INDEX,CMD_GET_ALL_VERTEX_NUM,CMD_GET_ALL_EDGE_NUM,CMD_READ_VERTEX,CMD_FLUSH,CMD_GET_ALL_VERTEX,CMD_GET_INDEX_VERTEX,CMD_GET_INDEX_RANGE_EDGE,CMD_SIZE};//这是命令的类
+const string cmd_name[CMD_SIZE]={"create graph","graph is in?","get ip of vertex","add vertex","add edge","read all edge of a vertex","add many edges","add many vertexes","read many edges","read all edge between two vertex","read edges about attribute","get vertex num","get edge num","read vertex","flush","get all vertex","get some vertex","get range edge"};
 enum{ANS_STATUS,ANS_DATA,ANS_SIZE};//响应包括两个字段，一个是状态，一个是数据，具体数据是什么，根据请求的类型决定
 enum{STATUS_OK,STATUS_EXIST,STATUS_NOT_EXIST,STATUS_V_EXIST,STATUS_V_NOT_EXIST,STATUS_E_EXIST};//这是相应的状态的类型
 //下面都是通信的消息体
@@ -25,7 +25,7 @@ public:
 //边的属性
 class proto_blog_id{
 public:
-        char graph_name[20];
+    char graph_name[20];
 	char blog_id[BLOGID_LEN+1];
 	proto_blog_id(string name,string blog_id){
                 if(blog_id.length()>BLOGID_LEN){
@@ -37,6 +37,29 @@ public:
 		memcpy(graph_name,name.c_str(),name.size()+1);
 	}
         proto_blog_id(){}
+};
+//边的属性范围
+class proto_blog_id_range{
+public:
+    char graph_name[20];
+	char blog_id1[BLOGID_LEN+1];
+	char blog_id2[BLOGID_LEN+1];
+	proto_blog_id_range(string name,string blog_id1,string blog_id2){
+          		if(blog_id1.length()>BLOGID_LEN){
+                    //如果blog_id的长度超过规定值了，就截取规定值的长度
+                    strcpy(this->blog_id1,blog_id1.substr(0,BLOGID_LEN).c_str());
+                }else{
+                    strcpy(this->blog_id1,blog_id1.c_str());
+                }
+				if(blog_id2.length()>BLOGID_LEN){
+                    //如果blog_id的长度超过规定值了，就截取规定值的长度
+                    strcpy(this->blog_id2,blog_id2.substr(0,BLOGID_LEN).c_str());
+                }else{
+                    strcpy(this->blog_id2,blog_id2.c_str());
+                }
+		memcpy(graph_name,name.c_str(),name.size()+1);
+	}
+        proto_blog_id_range(){}
 };
 //图的名字和顶点，向slave发送的消息体
 class proto_graph_vertex_u{
@@ -103,6 +126,18 @@ public:
 	char graph_name[20];
 	proto_graph(string name){
 		memcpy(graph_name,name.c_str(),name.size()+1);
+	}
+};
+//图的名字
+class proto_graph_cd{
+public:
+	char graph_name[20];
+	e_type min;
+	e_type max;
+	proto_graph_cd(string name,e_type min,e_type max){
+		memcpy(graph_name,name.c_str(),name.size()+1);
+		this->min=min;
+		this->max=max;
 	}
 };
 

@@ -174,7 +174,7 @@ string Subgraph::get_sub_key(string name,string dir){
 }
 //析构函数，把子图头和内存中的缓存存到硬盘里
 //1
-Subgraph::~Subgraph(){
+Subgraph::~Subgraph(){ 
 	cout<<"subgraph:"<<filename<<" xigou"<<endl;
     //把子图头存入文件
 	io.seekp(0);	
@@ -239,11 +239,8 @@ b_type Subgraph::require(uint32_t type){
     Lock(require_lock); 
 	if(head.free_num==0){
 		//如果空闲块为0，则扩展子图文件，并建索引
-		long t1=getTime();
 		add_file();//按默认配置的大小分配
 		update_index();//按默认配置大小对分配的文件建立索引。一定要和add_file大小配对
-		long t2=getTime();
-		cout<<"init:"<<t2-t1<<endl;
 	}
 	if(head.free_num>0)
 	return requireRaw(type);
@@ -281,7 +278,7 @@ b_type Subgraph::requireRaw(uint32_t type){
 	io.write((char*)block,head.block_size);
 	free(block);
     Unlock(require_lock);
-	cout<<sub_key<<" head.free_head:"<<head.free_head<<" "<<number<<" "<<head.free_num<<" "<<head.block_num<<endl;
+	//cout<<sub_key<<" head.free_head:"<<head.free_head<<" "<<number<<" "<<head.free_num<<" "<<head.block_num<<endl;
 	return number;	
 }
 //根据缓存中的块，得到Node类
@@ -656,7 +653,8 @@ b_type Subgraph::not_index_edge(Vertex* v,v_type id,t_type ts,b_type num,char is
 		BlockHeader<Edge> *b=NULL;  
 		//时间戳不用去重
 		b_type _blocknum=v->head;
-		b=(BlockHeader<Edge> *)get_block(_blocknum,1,is_hash);
+		//旧块用0，新块用1,一定要记住，这里bug弄了好久
+		b=(BlockHeader<Edge> *)get_block(_blocknum,0,is_hash);
 		while(true){
 			if(b->min==INVALID_VERTEX||id<b->min){
 				if(is_repeat==1){
@@ -675,6 +673,8 @@ b_type Subgraph::not_index_edge(Vertex* v,v_type id,t_type ts,b_type num,char is
 					b_type _new_blocknum=require(2);
 					BlockHeader<Edge> *_new_block=(BlockHeader<Edge> *)get_block(_new_blocknum,1,is_hash);
 					b->split(_new_block,this);//分裂块，新块在后面，旧块在前面
+					b->clean=1;
+					_new_block->clean=1;
 					if(id<b->min){
 						//边插入旧块,释放新块的锁
 						unlock2block(_new_block);
@@ -688,7 +688,7 @@ b_type Subgraph::not_index_edge(Vertex* v,v_type id,t_type ts,b_type num,char is
 			}else{
 				_blocknum=b->next;//在释放该块之前得到下一个索引块，以免在中间把该块移除出去了
                 unlock2block(b);//释放索引块
-				b=(BlockHeader<Edge> *)get_block(_blocknum,1,is_hash);
+				b=(BlockHeader<Edge> *)get_block(_blocknum,0,is_hash);
 			}
 		}
 			
@@ -838,21 +838,62 @@ int Subgraph::read_vertex(v_type id,Vertex_u& vertex_u,uint32_t* num,char is_has
 }
 //读取所有的顶点
 int Subgraph::read_all_vertex(list<Vertex_u>& vertexes,char is_hash){
+	float cpu;
+	size_t mem=0;
+	int pid=getpid();
+	int tid=-1;
 	//也要用到顶点锁，因为要操纵到顶点块
 	Lock(vertex_lock);
 	//遍历所有顶点块
 	b_type p=head.vertex_head;
 	BlockHeader<Vertex>* v_block=NULL;
 	while(p!=INVALID_BLOCK){
+		//GetCpuMem(cpu,mem,pid,tid);
+		//cout<<mem;
 		v_block=(BlockHeader<Vertex>*)get_block(p,0,is_hash);
 		uint32_t p1=v_block->list_head;
 		//遍历块中的每一个顶点
 		while(p1!=INVALID_INDEX){
-			vertexes.push_back(v_block->data[p1].content.to_vertex_u());
+			Vertex_u tmp=v_block->data[p1].content.to_vertex_u();
+			vertexes.push_back(tmp);
 			p1=v_block->data[p1].next;
 		}
 		p=v_block->next;
 		unlock2block(v_block);	
+		//GetCpuMem(cpu,mem,pid,tid);
+		//cout<<mem;
+	}
+	Unlock(vertex_lock);
+	return 0;	
+}
+//读取出度满足要求的顶点
+int Subgraph::read_index_vertex(list<Vertex_u>& vertexes,e_type min,e_type max,char is_hash){
+	float cpu;
+	size_t mem=0;
+	int pid=getpid();
+	int tid=-1;
+	//也要用到顶点锁，因为要操纵到顶点块
+	Lock(vertex_lock);
+	//遍历所有顶点块
+	b_type p=head.vertex_head;
+	BlockHeader<Vertex>* v_block=NULL;
+	while(p!=INVALID_BLOCK){
+		//GetCpuMem(cpu,mem,pid,tid);
+		//cout<<mem;
+		v_block=(BlockHeader<Vertex>*)get_block(p,0,is_hash);
+		uint32_t p1=v_block->list_head;
+		//遍历块中的每一个顶点
+		while(p1!=INVALID_INDEX){
+			Vertex_u tmp=v_block->data[p1].content.to_vertex_u();
+			if(min<=tmp.edge_num&&tmp.edge_num<=max){
+				vertexes.push_back(tmp);
+			}
+			p1=v_block->data[p1].next;
+		}
+		p=v_block->next;
+		unlock2block(v_block);	
+		//GetCpuMem(cpu,mem,pid,tid);
+		//cout<<mem;
 	}
 	Unlock(vertex_lock);
 	return 0;	
@@ -1002,22 +1043,22 @@ int Subgraph::read_all_edges(v_type id,list<Edge_u>& edges,char is_hash){
 	b_type tmp;
 	bool status;
 	Vertex* v=get_vertex_raw(id,&tmp,status,is_hash);//得到顶点
-        if(v==NULL){
-			if(status)
-			 	return 1;
-			else
-				return 2;
-		}
-        b_type free_num=tmp;
+    if(v==NULL){
+		if(status)
+			return 1;
+		else
+			return 2;
+	}
+    b_type free_num=tmp;
 	b_type num=v->head;
 	while(num!=INVALID_BLOCK){
 		BlockHeader<Edge>* edge_block=(BlockHeader<Edge>*)get_block(num,0,is_hash);
-                unlock2num(free_num);
-                free_num=edge_block->number;
+        unlock2num(free_num);
+        free_num=edge_block->number;
 		edge_block->get_all_contents(id,edges);
 		num=edge_block->next;
 	}
-        unlock2num(free_num);
+    unlock2num(free_num);
 	return 0;
 }
 //根据源顶点和目的顶点，读一条边，不需要盯块，这个函数没用到暂时，所以没有写并发操作

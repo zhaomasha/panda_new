@@ -92,7 +92,7 @@ public:
 	//返回顶点类，参数是顶点的id，入股顶点不存在，则返回无效顶点，顶点的id为INVALID_VERTEX
 	Vertex get_vertex(v_type id,char is_hash=0);
 	//插入一条边，成功了返回0，顶点不存在，则会失败，返回1，边存在了则返回-1,is_repeat为1，不允许两个顶点之间的边时间戳有重复
-	int add_edge(v_type id,Edge& e,char is_repeat=1,char is_hash=0);
+	int add_edge(v_type id,Edge& e,char is_repeat=0,char is_hash=0);
 	//查询边要插入的块
 	b_type get_edge_blocknum(Vertex* v,v_type id,t_type ts,b_type num,char is_repeat=0,char is_hash=0);
 	//查询顶点的索引，返回边要插入的块
@@ -101,6 +101,8 @@ public:
 	b_type not_index_edge(Vertex* v,v_type id,t_type ts,b_type num,char is_repeat=0,char is_hash=0);
 	//获取子图所有的顶点
 	int read_all_vertex(list<Vertex_u>& vertexes,char is_hash=0);
+	//获取满足出度的所有的顶点
+	int read_index_vertex(list<Vertex_u>& vertexes,e_type min,e_type max,char is_hash=0);
 	//读取两个顶点之间的所有边，源顶点不存在，则会返回1，源顶点存在则返回0
 	int read_edges(v_type s_id,v_type d_id,list<Edge_u>& edges,char is_hash=0);
         //读取两个顶点之间的指定属性的所有边，源顶点不存在，则会返回1，源顶点存在则返回0
@@ -241,7 +243,7 @@ public:
 	} 
 	//块内还有空间的时候，增加一条内容，把内容顺序地插入到内容双向链表中，都按照id字段排序，每个T类型都有一个id字段
 	//块内没有空间了，什么都不会做
-	void add_content(T& content){
+	void add_content(T& content){	    
 		uint32_t free=requireRaw();
 		if(free==INVALID_INDEX){
 			//块内没有空间了，直接返回
