@@ -180,15 +180,22 @@ int main(){
 	bal->init();
 	bal->print();	
 	//初始化状态维持
-	unsigned int alive_threshold = atoi(getenv("ALIVE_THRESHOLD"))
-	PandaStatus panda_status;
+	unsigned int alive_threshold = atoi(getenv("ALIVE_THRESHOLD"));
+	vector<string> slave_ips;
+	parse_env("SLAVE_IP", slave_ips, ":");
+	PandaStatus panda_status(slave_ips, alive_threshold);
 	//设置信号函数
 	signal(SIGTERM,kill_func);
 	signal(SIGINT,kill_func);
 	//初始化工作环境
 	context_t ctx(16);
+
 	pthread_create(&thread_switcher,NULL,switcher,&ctx);
-	pthread_create(&thread_status,NULL,keep_status_master,&panda_status);
+
+	status_param_t param_status;
+	param_status.pstatus = &panda_status;
+	param_status.pctx = &ctx;
+	pthread_create(&thread_status,NULL,keep_status_master,&param_status);
 	sleep(1);//首先要bind，所以sleep一会，让switcher线程把bind执行玩，再开worker线程中的connect操作
 	pthread_create(&thread_worker,NULL,worker,&ctx);
         cout<<"master success start!"<<endl;

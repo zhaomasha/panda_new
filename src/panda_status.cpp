@@ -30,6 +30,7 @@ int PandaStatus::add_slave(std::string host_ip, unsigned int * serial_num)
 	*serial_num = get_slave_serial();
 	slave_hosts[*serial_num] = host_ip;
 	unconnected_slaves.erase(host_ip);
+	return 0;
 }
 
 
@@ -65,9 +66,12 @@ void PandaStatus::slave_time_lapse(unsigned int t)
 	}
 }
 
-void PandaStatus::update_slave(unsigned int serial_num)
+int PandaStatus::update_slave(unsigned int serial_num)
 {
+	if(serial_num >= slave_alive_info.size()||slave_alive_info[serial_num]<0)
+		return -1;//wrong serial number
 	slave_alive_info[serial_num] = 0;
+	return 0;
 }
 
 unsigned int PandaStatus::get_slave_serial()
@@ -115,28 +119,29 @@ void* keep_status_slave(void*args)
 	uint32_t period = atoi(getenv("SLAVE_PERIOD"));
 	uint32_t con_timeout = atoi(getenv("SLAVE_TIMEOUT"));
     try{
-		context_t ctx(4);
-        socket_t* s=new socket_t(ctx,ZMQ_REQ);
+		context_t& ctx=*(context_t*)args;
+        socket_t s(ctx,ZMQ_REQ);
 		std::string endpoint="tcp://"+master_ip+":"+ status_master_port;
-        s->connect(endpoint.c_str());
+        s.connect(endpoint.c_str());
 		int slave_serial = -1;
 		time_t start_time = time(0);
         while(1){
             sleep(period);
-            Requester req_master(*s);
+            Requester req_master(s);
             if( slave_serial<0 ){
 				request_add_slave(req_master, slave_serial);
 				time_t past_time = time(0) - start_time;
 				if(past_time > con_timeout){
 					std::cout<<"thread " << pthread_self() << ": cannot connected to master"<<std::endl;
 				}
+				std::cout<<"thread " << pthread_self() << " action: add to master ,get serial number:"<< slave_serial <<std::endl;
             }else{
 				request_keep_status(req_master, slave_serial);
+				std::cout<<"thread " << pthread_self() << " action: keep status to master "<<std::endl;
             }
         }
-		delete s;
     }catch(zmq::error_t& err){
-        std::cout<<"thread " << pthread_self() << "error: " << err.what()<<std::endl;
+        std::cout<<"thread " << pthread_self() << " error: " << err.what()<<std::endl;
     }
 }
 
@@ -146,7 +151,7 @@ void handle_add_slave(Replier &rep,PandaStatus* panda_status)
 	unsigned int serial_num;
 	int ret = panda_status->add_slave(msg_new_slave->ip, &serial_num);
 	if( ret != 0 ){
-		rep.ans(STATUS_OK,"vertex not exist",strlen("vertex not exist")+1);
+		rep.ans(STATUS_REJECT_SLAVE,"slave alread exist",strlen("slave alread exist")+1);
 	}else{
 		rep.ans(STATUS_OK,&serial_num, sizeof(serial_num));
 	}
@@ -156,8 +161,12 @@ void handle_keep_slave_status(Replier & rep,PandaStatus* panda_status)
 {
 	proto_slave_status *msg_slave_status = (proto_slave_status*)rep.get_arg();
 	unsigned int serial_num = msg_slave_status->slave_serial;
-	panda_status->update_slave(serial_num);
-	rep.ans(STATUS_OK,"ok",strlen("ok")+1);
+	int ret = panda_status->update_slave(serial_num);
+	if(0 == ret){
+		rep.ans(STATUS_OK,"ok",strlen("ok")+1);
+	}else{
+		rep.ans(STATUS_INVALID_SLAVE,"invalid slave",strlen("invalid slave")+1);
+	}
 }
 
 /*
@@ -176,11 +185,12 @@ void check_invalid_slaves(PandaStatus* panda_status)
 
 void* keep_status_master(void* args)
 {                                                                                         
-	PandaStatus* panda_status = (PandaStatus*)args;
+	status_param_t *param = (status_param_t*)args;
+	PandaStatus* panda_status = param->pstatus;
+	context_t* ctx = param->pctx;
 	uint32_t period = atoi(getenv("MASTER_PERIOD"));
     try{                                                                                  
-		context_t ctx(4);
-        socket_t s(ctx,ZMQ_REP);                                           
+        socket_t s(*ctx,ZMQ_REP);
 		std::string master_ip = getenv("MASTER_IP");
 		std::string status_master_port = getenv("STATUS_MASTER_PORT");
 		std::string endpoint="tcp://"+master_ip+":"+status_master_port;

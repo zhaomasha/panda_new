@@ -58,8 +58,10 @@ public:
 	 * update_slave's status
 	 * input:
 	 *		serial_num, indicate the slave
+	 * return:
+	 *      SUCCESS(0)/FAILED(negative)
 	 */
-	void update_slave(unsigned int serial_num);
+	int update_slave(unsigned int serial_num);
 	
 private:
 	//alive info, indicate unused with negative
@@ -77,3 +79,8 @@ private:
 
 void* keep_status_slave(void *);
 void* keep_status_master(void*);
+
+typedef struct{
+	PandaStatus* pstatus;
+	context_t* pctx;
+} status_param_t;

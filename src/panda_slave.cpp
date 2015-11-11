@@ -401,7 +401,7 @@ int main(){
 	//创建zmq的路由分发模式，创建工作线程
 	context_t ctx(16);
 	pthread_create(&thread_switcher,NULL,switcher,&ctx);
-	pthread_create(&thread_status,NULL,keep_status_slave,NULL);
+	pthread_create(&thread_status,NULL,keep_status_slave,&ctx);
 	sleep(1);
         threads=(pthread_t*)malloc(sizeof(pthread_t)*thread_num);
         for(int i=0;i<thread_num;i++)
