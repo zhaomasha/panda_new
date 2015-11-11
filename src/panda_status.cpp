@@ -184,7 +184,7 @@ void* keep_status_master(void* args)
 		std::string master_ip = getenv("MASTER_IP");
 		std::string status_master_port = getenv("STATUS_MASTER_PORT");
 		std::string endpoint="tcp://"+master_ip+":"+status_master_port;
-		int recv_timeout = 1;
+		int recv_timeout = 1000;
 		s.setsockopt(ZMQ_RCVTIMEO, &recv_timeout, sizeof(int));
 		s.bind(endpoint.c_str());
 		time_t start_time = time(0);
@@ -193,8 +193,9 @@ void* keep_status_master(void* args)
 		while(1){
 			Replier rep(s);
 			rep.parse_ask();
-			uint32_t cmd_id = rep.get_cmd();
-			std::cout<< "operation " << cmd_id << ":" << cmd_name[cmd_id] << std::endl;
+			int cmd_id = rep.get_cmd();
+			if( cmd_id >=0 )
+				std::cout<< "operation " << cmd_id << ":" << cmd_name[cmd_id] << std::endl;
 			time_t cur_time = time(0);
 			panda_status->slave_time_lapse(cur_time-click_time);
 			click_time = cur_time;
@@ -215,6 +216,6 @@ void* keep_status_master(void* args)
 		}
 		
     }catch(zmq::error_t& err){                                                            
-        std::cout<<"thread " << pthread_self() << "error: "<<err.what()<<std::endl;         
+        std::cout<<"thread " << pthread_self() << " error: "<<err.what()<<std::endl;         
     }                                                                                     
 }                        

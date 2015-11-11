@@ -128,13 +128,13 @@ class Requester{
 public:
 	explicit Requester(socket_t& s,uint32_t size=200):sock(s),size(size){}
 	//发送请求，包括命令和参数
-	void ask(uint32_t cmd,void*data,size_t d_size){
+	void ask(int cmd,void*data,size_t d_size){
 		//分段发送消息，请求消息有命令和参数，所以有两个消息体
 		zmq::message_t omsg[ASK_SIZE];
 		//初始化命令消息体为四个字节
 		omsg[ASK_CMD].rebuild(sizeof(uint32_t));
 		//填充命令数据
-		*(uint32_t*)omsg[ASK_CMD].data()=cmd;
+		*(int*)omsg[ASK_CMD].data()=cmd;
 		//初始化参数消息	
 		omsg[ASK_ARG].rebuild(d_size);
 		memcpy(omsg[ASK_ARG].data(),data,d_size);
@@ -144,10 +144,10 @@ public:
 		sock.send(omsg[i],0);
 	}
 	//向同一ip批量请求添加同一张图的多条边
-	void ask(uint32_t cmd,list<Edge_u> &edges,string graph_name){
+	void ask(int cmd,list<Edge_u> &edges,string graph_name){
 		zmq::message_t omsg[ASK_SIZE];//两个消息体，一个传输命令，一个传输参数
 		omsg[ASK_CMD].rebuild(sizeof(uint32_t));
-		*(uint32_t*)omsg[ASK_CMD].data()=cmd;
+		*(int*)omsg[ASK_CMD].data()=cmd;
 		if(edges.size()==0){
 			//如果集合没有数据，可以直接返回而不和系统通信，但这个可以由用户来优化，不需要在这里做
 			sock.send(omsg[ASK_CMD],0);//如果集合没有数据，则send的参数是0，直接返回
@@ -186,10 +186,10 @@ public:
 		sock.send(omsg[ASK_ARG],0);
 	}
 	//向同一ip批量请求添加同一张图的多个顶点
-	void ask(uint32_t cmd,list<Vertex_u> &vertexes,string graph_name){
+	void ask(int cmd,list<Vertex_u> &vertexes,string graph_name){
 		zmq::message_t omsg[ASK_SIZE];//两个消息体，一个传输命令，一个传输参数
 		omsg[ASK_CMD].rebuild(sizeof(uint32_t));
-		*(uint32_t*)omsg[ASK_CMD].data()=cmd;
+		*(int*)omsg[ASK_CMD].data()=cmd;
 		if(vertexes.size()==0){
 			//如果集合没有数据，可以直接返回而不和系统通信，但这个可以由用户来优化，不需要在这里做
 			sock.send(omsg[ASK_CMD],0);//如果集合没有数据，则send的参数是0，直接返回
@@ -228,10 +228,10 @@ public:
 		sock.send(omsg[ASK_ARG],0);
 	}
 	//向同一ip批量请求读取同一张图的多条边
-	void ask(uint32_t cmd,list<Two_vertex> &vertexes,string graph_name){
+	void ask(int cmd,list<Two_vertex> &vertexes,string graph_name){
 		zmq::message_t omsg[ASK_SIZE];//两个消息体，一个传输命令，一个传输参数
 		omsg[ASK_CMD].rebuild(sizeof(uint32_t));
-		*(uint32_t*)omsg[ASK_CMD].data()=cmd;
+		*(int*)omsg[ASK_CMD].data()=cmd;
 		if(vertexes.size()==0){
 			//如果集合没有数据，可以直接返回而不和系统通信，但这个可以由用户来优化，不需要在这里做
 			sock.send(omsg[ASK_CMD],0);//如果集合没有数据，则send的参数是0，直接返回
@@ -430,8 +430,11 @@ public:
 		
 		
 	}
-	uint32_t get_cmd(){
-		return *(uint32_t*)imsg[ASK_CMD].data();
+	//return -1 if there is no data.
+	int get_cmd(){
+		if(imsg[ASK_CMD].size() == 0)
+			return -1;
+		return *(int*)imsg[ASK_CMD].data();
 	}
 	void* get_arg(){
 		return imsg[ASK_ARG].data();

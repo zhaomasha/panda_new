@@ -375,7 +375,7 @@ void * worker(void* args)
 			}
 		}
 	}catch(zmq::error_t& err){
-		cout<<err.what();
+		cout<<"slave worker failed:"<<err.what()<<endl;
 	}
 }
 //创建zmq通信模式的线程
