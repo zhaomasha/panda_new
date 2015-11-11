@@ -10,6 +10,7 @@ configuration:
     CACHESZ 每个子图在内存中缓存的block数目
     MASTER_IP master进程所在的ip
     MASTER_PORT master进程的端口
+	STATUS_MASTER_PORT master status info keeping service's port
     SLAVE_IP 所有slave的ip，每个ip之间用冒号隔开
     SLAVE_PORT slave进程的端口
     LOCAL_IP 该slave所在的ip，每个slave不一样
