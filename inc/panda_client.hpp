@@ -57,6 +57,8 @@ public:
     uint32_t read_edge_index(string blog_id,list<Edge_u> &edges);
     //多线程，批量查询拥有某个属性的所有边，参数是集合的数组，size是数组的大小
 	uint32_t read_edge_index_pthread(string blog_id,list<Edge_u>** edges,uint32_t *size);
+	//根据某个属性范围，查询所有的边
+    uint32_t read_edge_index_range(list<Edge_u> &edges,string min,string max);
     //多线程，查询图的顶点数目
 	uint32_t get_vertex_num_pthread(uint32_t** nums,uint32_t *size);
 	//多线程，查询图的边的数目
@@ -65,6 +67,8 @@ public:
     uint32_t read_vertex(v_type id,Vertex_u& v,uint32_t *num);
 	//返回所有的顶点
 	uint32_t read_all_vertex(list<Vertex_u>** vertexes,uint32_t *size);
+	//返回出度在某个范围内的顶点
+	uint32_t read_index_vertex(list<Vertex_u> &vertexes,e_type min,e_type max);
     uint64_t get_number(string s1,string s2);
 	//缓存中查询元数据，不存在，则返回空串
 	string cache_get_meta(string graph_name,uint32_t key);

@@ -492,7 +492,63 @@ class Btree{
 			int flag=0;
 			Bleaf<T,TV>* node=search_leaf_node(root,key,flag);
 			find_values_raw(node,key,values,flag);
-		}	
+		}
+		//找一个范围里面的值
+		void find_values_range(T key1,T key2,list<TV>& values){
+			if(key2<key1) return;//第一个参数不能比第二个参数大
+			b_type num=head.root_node;
+			if(num==INVALID_BLOCK) return;//如果根节点不存在，直接返回，list中也就没有值
+			Bnode<T>* root=(Bnode<T>*)get_block(num);
+			int flag=0;
+			Bleaf<T,TV>* node=search_leaf_node(root,key1,flag);
+			while(true){
+				if(node!=NULL){
+					//for循环node
+					for(int i=0;i<node->size;i++){
+						if(node->keys[i]>key2) return;
+						if(key1<=node->keys[i]&&node->keys[i]<=key2){
+							values.push_back(node->values[i]);
+						}
+					}
+					b_type next_num=node->next;
+					if(next_num!=INVALID_BLOCK){
+						node=(Bleaf<T,TV>*)get_block(next_num);
+					}else{
+						node=NULL;
+					}
+				}else{
+					return;
+				}
+			}
+		}
+		//找一个范围里面的值
+		void find_values_range_num(T key1,T key2,v_type& nums){
+			if(key2<key1) return;//第一个参数不能比第二个参数大
+			b_type num=head.root_node;
+			if(num==INVALID_BLOCK) return;//如果根节点不存在，直接返回，list中也就没有值
+			Bnode<T>* root=(Bnode<T>*)get_block(num);
+			int flag=0;
+			Bleaf<T,TV>* node=search_leaf_node(root,key1,flag);
+			while(true){
+				if(node!=NULL){
+					//for循环node
+					for(int i=0;i<node->size;i++){
+						if(node->keys[i]>key2) return;
+						if(key1<=node->keys[i]&&node->keys[i]<=key2){
+							nums++;
+						}
+					}
+					b_type next_num=node->next;
+					if(next_num!=INVALID_BLOCK){
+						node=(Bleaf<T,TV>*)get_block(next_num);
+					}else{
+						node=NULL;
+					}
+				}else{
+					return;
+				}
+			}
+		}		
 		//key可能在第一个node里面，也可能不在，但是要根据flag的值继续扫描相邻的node
 		void find_values_raw(Bleaf<T,TV>*node,T key,list<TV>& values,int& flag){
 			int i;

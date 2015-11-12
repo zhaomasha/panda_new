@@ -174,7 +174,7 @@ string Subgraph::get_sub_key(string name,string dir){
 }
 //析构函数，把子图头和内存中的缓存存到硬盘里
 //1
-Subgraph::~Subgraph(){
+Subgraph::~Subgraph(){ 
 	cout<<"subgraph:"<<filename<<" xigou"<<endl;
     //把子图头存入文件
 	io.seekp(0);	
@@ -838,21 +838,62 @@ int Subgraph::read_vertex(v_type id,Vertex_u& vertex_u,uint32_t* num,char is_has
 }
 //读取所有的顶点
 int Subgraph::read_all_vertex(list<Vertex_u>& vertexes,char is_hash){
+	float cpu;
+	size_t mem=0;
+	int pid=getpid();
+	int tid=-1;
 	//也要用到顶点锁，因为要操纵到顶点块
 	Lock(vertex_lock);
 	//遍历所有顶点块
 	b_type p=head.vertex_head;
 	BlockHeader<Vertex>* v_block=NULL;
 	while(p!=INVALID_BLOCK){
+		//GetCpuMem(cpu,mem,pid,tid);
+		//cout<<mem;
 		v_block=(BlockHeader<Vertex>*)get_block(p,0,is_hash);
 		uint32_t p1=v_block->list_head;
 		//遍历块中的每一个顶点
 		while(p1!=INVALID_INDEX){
-			vertexes.push_back(v_block->data[p1].content.to_vertex_u());
+			Vertex_u tmp=v_block->data[p1].content.to_vertex_u();
+			vertexes.push_back(tmp);
 			p1=v_block->data[p1].next;
 		}
 		p=v_block->next;
 		unlock2block(v_block);	
+		//GetCpuMem(cpu,mem,pid,tid);
+		//cout<<mem;
+	}
+	Unlock(vertex_lock);
+	return 0;	
+}
+//读取出度满足要求的顶点
+int Subgraph::read_index_vertex(list<Vertex_u>& vertexes,e_type min,e_type max,char is_hash){
+	float cpu;
+	size_t mem=0;
+	int pid=getpid();
+	int tid=-1;
+	//也要用到顶点锁，因为要操纵到顶点块
+	Lock(vertex_lock);
+	//遍历所有顶点块
+	b_type p=head.vertex_head;
+	BlockHeader<Vertex>* v_block=NULL;
+	while(p!=INVALID_BLOCK){
+		//GetCpuMem(cpu,mem,pid,tid);
+		//cout<<mem;
+		v_block=(BlockHeader<Vertex>*)get_block(p,0,is_hash);
+		uint32_t p1=v_block->list_head;
+		//遍历块中的每一个顶点
+		while(p1!=INVALID_INDEX){
+			Vertex_u tmp=v_block->data[p1].content.to_vertex_u();
+			if(min<=tmp.edge_num&&tmp.edge_num<=max){
+				vertexes.push_back(tmp);
+			}
+			p1=v_block->data[p1].next;
+		}
+		p=v_block->next;
+		unlock2block(v_block);	
+		//GetCpuMem(cpu,mem,pid,tid);
+		//cout<<mem;
 	}
 	Unlock(vertex_lock);
 	return 0;	
@@ -939,24 +980,105 @@ int Subgraph::read_edges(v_type s_id,v_type d_id,list<Edge_u>& edges,char is_has
     unlock2num(free_num);
 	return 0;	
 }
+//根据源顶点，目的顶点以及属性的范围，读取所有的边，结果存入到list结构中，源顶点不存在返回1，存在返回0
+//2 读操作的原则是，在获取到了下一个块的锁之后，才能释放上一个块的锁，这种有序性，使得读一个顶点的过程中，还可以并发写一个顶点
+int Subgraph::read_edges(v_type s_id,v_type d_id,char *min,char *max,list<Edge_u>& edges,char is_hash){
+	b_type num;
+	bool status;
+	Vertex* v=get_vertex_raw(s_id,&num,status,is_hash);//得到顶点
+    if(v==NULL){
+		if(status)
+			return 1;
+		else
+			return 2;
+	}
+	b_type index=v->index;
+	if(index==NO_INDEXBLOCK){
+		//该顶点没有索引块，遍历所有的边块
+		b_type e_num=v->head;
+		BlockHeader<Edge>* e_block=NULL;
+		while(true){
+			if(e_num!=INVALID_BLOCK){
+				e_block=(BlockHeader<Edge>*)get_block(e_num,0,is_hash);
+				//id一定要是<=，和插入不一样,插入可以在含有该id的最后一个块插入，查找是要在第一个含有该id的块找
+				if(e_block->min==INVALID_VERTEX||d_id<=e_block->min){
+					e_block->get_contents_all(s_id,d_id,min,max,edges,this);
+					unlock2block(e_block);
+					unlock2num(num);//释放顶点块
+					return 0;	
+				}else{
+					e_num=e_block->next;
+					unlock2block(e_block);
+				}
+			}else{
+				break;
+			}
+		}
+		unlock2num(num);
+		return 0;
+	}
+    int free_num=num;
+	while(index!=INVALID_BLOCK){
+		BlockHeader<Index>* in_block=(BlockHeader<Index>*)get_block(index,0,is_hash);//获取索引块
+        unlock2num(free_num);//获取了索引块后，就可以释放顶点块的锁，或者前一个索引块的锁
+        free_num=in_block->number;
+		//索引块里面一定有索引项
+		if(in_block->min==INVALID_VERTEX||d_id<in_block->min){
+			uint32_t item=in_block->list_head;
+			BlockHeader<Edge>* e_block=NULL;
+			while(item!=INVALID_INDEX){
+				if(in_block->data[item].content.id==INVALID_VERTEX||d_id<in_block->data[item].content.id){
+					e_block=(BlockHeader<Edge>*)get_block(in_block->data[item].content.target,0,is_hash);//获取边块
+                    unlock2num(free_num);
+                    free_num=e_block->number;
+					while(true){
+						//遍历一些块，因为可能有很多条边
+						if(e_block->get_contents(s_id,d_id,min,max,edges)){
+							b_type pre_num=e_block->pre;
+							if(pre_num!=INVALID_BLOCK){ 
+								e_block=(BlockHeader<Edge>*)get_block(pre_num,0,is_hash);
+                                unlock2num(free_num);
+                                free_num=e_block->number;    
+                            }
+							else{
+                                unlock2num(free_num);    
+								return 0;
+                            }
+						}else{
+                                unlock2num(free_num);
+								return 0;
+                        }
+				   }				
+				}else{
+				   item=in_block->data[item].next;
+				}
+			}	
+		}else{
+			index=in_block->next;
+		}
+	}
+	//出了循环，说明没有这条边
+    unlock2num(free_num);
+	return 0;	
+}
 //根据源顶点，目的顶点以及属性，读取所有的边，结果存入到list结构中，源顶点不存在返回1，存在返回0
 //2 读操作的原则是，在获取到了下一个块的锁之后，才能释放上一个块的锁，这种有序性，使得读一个顶点的过程中，还可以并发写一个顶点
 int Subgraph::read_edges(v_type s_id,v_type d_id,char *blog_id,list<Edge_u>& edges,char is_hash){
 	b_type num;
 	bool status;
 	Vertex* v=get_vertex_raw(s_id,&num,status,is_hash);//得到顶点
-        if(v==NULL){
-			if(status)
-			 	return 1;
-			else
-				return 2;
-		}
+    if(v==NULL){
+		if(status)
+			 return 1;
+		else
+			return 2;
+	}
 	b_type index=v->index;
-        int free_num=num;
+    int free_num=num;
 	while(index!=INVALID_BLOCK){
 		BlockHeader<Index>* in_block=(BlockHeader<Index>*)get_block(index,0,is_hash);//获取索引块
-                unlock2num(free_num);//获取了索引块后，就可以释放顶点块的锁，或者前一个索引块的锁
-                free_num=in_block->number;
+        unlock2num(free_num);//获取了索引块后，就可以释放顶点块的锁，或者前一个索引块的锁
+        free_num=in_block->number;
 		//索引块里面一定有索引项
 		if(in_block->min==INVALID_VERTEX||d_id<in_block->min){
 			uint32_t item=in_block->list_head;
@@ -1002,22 +1124,22 @@ int Subgraph::read_all_edges(v_type id,list<Edge_u>& edges,char is_hash){
 	b_type tmp;
 	bool status;
 	Vertex* v=get_vertex_raw(id,&tmp,status,is_hash);//得到顶点
-        if(v==NULL){
-			if(status)
-			 	return 1;
-			else
-				return 2;
-		}
-        b_type free_num=tmp;
+    if(v==NULL){
+		if(status)
+			return 1;
+		else
+			return 2;
+	}
+    b_type free_num=tmp;
 	b_type num=v->head;
 	while(num!=INVALID_BLOCK){
 		BlockHeader<Edge>* edge_block=(BlockHeader<Edge>*)get_block(num,0,is_hash);
-                unlock2num(free_num);
-                free_num=edge_block->number;
+        unlock2num(free_num);
+        free_num=edge_block->number;
 		edge_block->get_all_contents(id,edges);
 		num=edge_block->next;
 	}
-        unlock2num(free_num);
+    unlock2num(free_num);
 	return 0;
 }
 //根据源顶点和目的顶点，读一条边，不需要盯块，这个函数没用到暂时，所以没有写并发操作

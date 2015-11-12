@@ -14,4 +14,5 @@ int Trylock(lock_t *lock);
 void Destroylock(lock_t *lock);
 void Initlock(lock_t *lock,void *p);
 long getTime();
+bool GetCpuMem(float &cpu,size_t &mem,int pid,int tid=-1);
 #endif

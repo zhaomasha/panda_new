@@ -100,6 +100,12 @@ void Graph::get_edge_index(Key k,list<Value>& vs){
         edge_index.find_values(k,vs);
         Unlock(index_lock);
 }
+//获取属性范围的边索引的操作，是串行
+void Graph::get_edge_index(Key min,Key max,list<Value>& vs){
+        Lock(index_lock);
+        edge_index.find_values_range(min,max,vs);
+        Unlock(index_lock);
+}
 //增加顶点数目
 void Graph::vertex_num_increment(){
         Lock(vertex_num_lock);

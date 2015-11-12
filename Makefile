@@ -1,5 +1,4 @@
-cppflags=-ggdb3 -rdynamic
-
+cppflags=-g -rdynamic
 headers=-I inc
 
 bin_dir=bin

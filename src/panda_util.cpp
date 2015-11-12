@@ -89,4 +89,59 @@ int Trylock(lock_t *lock){
 		}
 		return 1;
 }
-
+bool GetCpuMem(float &cpu,size_t &mem, int pid,int tid ) 
+{ 
+    bool ret = false; 
+    char cmdline[100]; 
+    sprintf(cmdline, "ps -o %%cpu,rss,%%mem,pid,tid -mp %d", pid); 
+    FILE *file; 
+    file = popen(cmdline, "r"); 
+    if (file == NULL)  
+    { 
+        printf("file == NULL\n"); 
+        return false; 
+    } 
+    char line[300]; 
+    float l_cpuPrec=0; 
+    int l_mem=0; 
+    float l_memPrec=0; 
+    int l_pid=0; 
+    int l_tid=0; 
+    if (fgets(line, 300, file) != NULL)  
+    { 
+    //  printf("1st line:%s",line); 
+        if (fgets(line, 300, file) != NULL)  
+        { 
+    //      printf("2nd line:%s",line); 
+            sscanf( line, "%f %d %f %d -", &l_cpuPrec, &l_mem, &l_memPrec, &l_pid ); 
+            cpu = l_cpuPrec; 
+            mem = l_mem; 
+            if( tid == -1 ) 
+                ret = true; 
+            else 
+            { 
+                while( fgets(line, 300, file) != NULL ) 
+                { 
+                    sscanf( line, "%f - - - %d", &l_cpuPrec, &l_tid ); 
+    //              printf("other line:%s",line); 
+    //              cout<<l_cpuPrec<<'\t'<<l_tid<<endl; 
+                    if( l_tid == tid ) 
+                    { 
+                        printf("cpuVal is tid:%d\n",tid); 
+                        cpu = l_cpuPrec; 
+                        ret = true; 
+                        break; 
+                    } 
+                } 
+                if( l_tid != tid ) 
+                    printf("TID not exist\n"); 
+            } 
+        } 
+        else 
+            printf("PID not exist\n"); 
+    } 
+    else 
+        printf("Command or Parameter wrong\n"); 
+    pclose(file); 
+    return ret; 
+}
