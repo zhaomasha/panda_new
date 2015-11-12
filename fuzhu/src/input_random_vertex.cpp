@@ -31,7 +31,8 @@ int main(int argc,char* argv[])
     }
     //存储顶点
     string data;
-    list<Vertex_u> vs;
+    list<Vertex_u> *vss=new list<Vertex_u>();
+	list<Vertex_u> &vs=*vss;
     uint32_t ok_all_num=0;//成功插入的顶点总数目
     uint32_t ok_pack_num=0;//每次批量插入成功的顶点数目
     int r=0;//记录一次pack

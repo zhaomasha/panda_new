@@ -161,6 +161,17 @@ uint32_t Client::read_vertex(v_type id,Vertex_u& v,uint32_t *num){
         }
         return res;
 }
+//查询出度在某个范围内的顶点
+uint32_t Client::read_index_vertex(list<Vertex_u>& vertexes,e_type min,e_type max){
+	if(current_graph()=="") return STATUS_NOT_EXIST;//如果还没有连接图，则返回状态STATUS_NOT_EXIST
+	//如果连接图了，则首先找图和顶点的元数据，先在缓存中找，没找到再去master询问
+	string ip=string(getenv("LOCAL_IP"));
+	Requester req_slave(*find_sock(ip));
+	proto_graph_cd mes_slave(graph_name,min,max);
+	req_slave.ask(CMD_GET_INDEX_VERTEX,&mes_slave,sizeof(proto_graph_cd));
+	req_slave.parse_ans(vertexes);
+    return STATUS_OK;
+}
 //增加一条边，顶点不存在的时候不会自动创建顶点，添加边就会失败
 uint32_t Client::add_edge(Edge_u &e){
 	if(current_graph()=="") return STATUS_NOT_EXIST;//如果还没有连接图，则返回状态STATUS_NOT_EXIST
@@ -436,6 +447,18 @@ uint32_t Client::read_edges(v_type id,list<Edge_u>& edges){
 	req_slave.parse_ans(edges);
 	return req_slave.get_status();
 }
+//根据某个属性范围，查询所有的边
+uint32_t Client::read_edge_index_range(list<Edge_u> &edges,string min,string max){
+	if(current_graph()=="") return STATUS_NOT_EXIST;//如果还没有连接图，则返回状态STATUS_NOT_EXIST
+	//如果连接图了，则首先找图和顶点的元数据，先在缓存中找，没找到再去master询问
+	string ip=string(getenv("LOCAL_IP"));
+	Requester req_slave(*find_sock(ip));
+	proto_blog_id_range mes_slave(graph_name,min,max);
+	req_slave.ask(CMD_GET_INDEX_RANGE_EDGE,&mes_slave,sizeof(proto_blog_id_range));
+	req_slave.parse_ans(edges);
+    return STATUS_OK;
+}
+
 //查询具有某属性的所有边的线程入口
 void* thread_read_edge_index(void *args){
 	Ip_Blog_ID* ip_blog_id=(Ip_Blog_ID*)args;
