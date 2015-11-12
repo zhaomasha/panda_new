@@ -105,8 +105,10 @@ public:
 	int read_index_vertex(list<Vertex_u>& vertexes,e_type min,e_type max,char is_hash=0);
 	//读取两个顶点之间的所有边，源顶点不存在，则会返回1，源顶点存在则返回0
 	int read_edges(v_type s_id,v_type d_id,list<Edge_u>& edges,char is_hash=0);
-        //读取两个顶点之间的指定属性的所有边，源顶点不存在，则会返回1，源顶点存在则返回0
+    //读取两个顶点之间的指定属性的所有边，源顶点不存在，则会返回1，源顶点存在则返回0
 	int read_edges(v_type s_id,v_type d_id,char *blog_id,list<Edge_u>& edges,char is_hash=0);
+	//读取两个顶点之间的指定属性范围的所有边，源顶点不存在，则会返回1，源顶点存在则返回0
+	int read_edges(v_type s_id,v_type d_id,char *min,char *max,list<Edge_u>& edges,char is_hash=0);
 	//读取顶点所有的边，源顶点不存在，则会返回1，源顶点存在则返回0
 	int read_all_edges(v_type id,list<Edge_u>& edges,char is_hash=0);
     //读取一个顶点信息，把顶点的边也返回
@@ -132,7 +134,7 @@ public:
 	b_type index;//索引块链表的头指针
 	explicit Vertex(v_type i);
 	Vertex(Vertex_u v);
-        Vertex_u to_vertex_u();
+    Vertex_u to_vertex_u();
 }__attribute__((packed));
 
 //边的类，系统内部存储的边类型
@@ -476,6 +478,23 @@ public:
 			}
 		}
 	}
+	//从该块开始，取出所有顶点号为id，属性范围在min和max之间的边 
+	void get_contents_all(v_type s_id,v_type d_id,char *min,char *max,list<Edge_u>& edges,Subgraph* s){
+		get_contents(s_id,d_id,edges);
+		b_type next_blocknum=next;
+		v_type next_min=this->min;
+		while(true){
+			if(d_id==next_min){
+				BlockHeader<Edge> *b=(BlockHeader<Edge> *)s->get_block(next_blocknum,0,is_hash);
+				b->get_contents(s_id,d_id,min,max,edges);
+				next_min=b->min;
+				next_blocknum=b->next;
+				s->unlock2block(b);//释放该块
+			}else{
+				break;
+			}
+		}
+	}
 	//把该块中目标顶点是id的边存入集合中，如果第一条边就是，那么返回1，否则返回0
 	int get_contents(v_type id,list<Edge>& edges){
 		uint32_t num=list_head;
@@ -508,8 +527,8 @@ public:
 		}
 		return flag;
 	}
-        //把该块中目标顶点是id，属性是blog_id的边存入Edge_u集合中，如果第一条边的目标顶点是id，那么返回1，否则返回0
-        //这个函数，只有边块才会调用，所以可以强制类型转换成Edge类型的块
+    //把该块中目标顶点是id，属性是blog_id的边存入Edge_u集合中，如果第一条边的目标顶点是id，那么返回1，否则返回0
+    //这个函数，只有边块才会调用，所以可以强制类型转换成Edge类型的块
 	int get_contents(v_type s_id,v_type d_id,char *blog_id,list<Edge_u>& edges){
 		uint32_t num=list_head;
                 int flag=0;
@@ -518,6 +537,26 @@ public:
 		}
 		while(num!=INVALID_INDEX){
 			if((data[num].content.id==d_id)&&(strcmp(((Edge)(data[num].content)).blog_id,blog_id)==0)) 
+				edges.push_back(data[num].content.to_edge_u(s_id));
+			if(data[num].content.id>d_id) 
+				break;//内部是排序的，当边的id大于目标id时，后面就找不到相应的边了，那么退出循环 
+			num=data[num].next;
+		}
+		return flag;
+	}
+	//把该块中目标顶点是id，属性是min和max范围内的边存入Edge_u集合中，如果第一条边的目标顶点是id，那么返回1，否则返回0
+    //这个函数，只有边块才会调用，所以可以强制类型转换成Edge类型的块
+	int get_contents(v_type s_id,v_type d_id,char *min,char *max,list<Edge_u>& edges){
+		uint32_t num=list_head;
+        int flag=0;
+		if(num!=INVALID_INDEX){
+			if(data[num].content.id==d_id) flag=1;
+		}
+		while(num!=INVALID_INDEX){
+			Key curK(((Edge)(data[num].content)).blog_id);
+			Key minK(min);
+			Key maxK(max);
+			if((data[num].content.id==d_id)&&minK<=curK&&curK<=maxK) 
 				edges.push_back(data[num].content.to_edge_u(s_id));
 			if(data[num].content.id>d_id) 
 				break;//内部是排序的，当边的id大于目标id时，后面就找不到相应的边了，那么退出循环 

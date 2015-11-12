@@ -311,14 +311,15 @@ void handler_read_edge_index(Replier &rep){
 void handler_read_edge_index_range(Replier &rep){
 	proto_blog_id_range *req_arg=(proto_blog_id_range*)rep.get_arg();
 	list<Edge_u> edges;//存储返回的结果
-    Key k(req_arg->blog_id);
+    Key minK(req_arg->blog_id1);
+    Key maxK(req_arg->blog_id2);
     Graph *graph=graph_set->get_graph(req_arg->graph_name);
     list<Value> vs;
     unordered_map<int,unordered_map<int,int>*> repeated;//这个map用来查重，重复的两个顶点就不用再找边了
     unordered_map<int,unordered_map<int,int>*>::iterator it_out;
     unordered_map<int,int>::iterator it_in;
     list<Value>::iterator it;
-    graph->get_edge_index(k,vs);
+    graph->get_edge_index(minK,maxK,vs);
     for(it=vs.begin();it!=vs.end();it++){
                v_type s_id=(*it).s_id;
                v_type d_id=(*it).d_id;
@@ -344,7 +345,7 @@ void handler_read_edge_index_range(Replier &rep){
                     Subgraph *sub=graph_set->get_subgraph(req_arg->graph_name,s_id);
 					int res;
 					while(true){
-                    	res=sub->read_edges(s_id,d_id,req_arg->blog_id,edges);    
+                    	res=sub->read_edges(s_id,d_id,req_arg->blog_id1,req_arg->blog_id2,edges);    
 						if(res==1||res==0){
 							break;
 						}

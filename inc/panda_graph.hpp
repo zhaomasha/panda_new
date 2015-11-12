@@ -30,6 +30,8 @@ public:
         void add_edge_index(Key k,Value v);
         //读取边的索引
         void get_edge_index(Key k,list<Value>&vs);
+		//读取属性范围内的边的索引
+        void get_edge_index(Key min,Key max,list<Value>&vs);
         //增加顶点数目
         void vertex_num_increment();
 		//增加边数目
