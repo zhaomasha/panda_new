@@ -380,15 +380,9 @@ void * worker(void* args)
 		socket_t sock(ctx,ZMQ_REP);//创建线程的套接字
 		sock.connect("inproc://scatter");//inproc方式，一定要先bind
 		int flag=1;
-<<<<<<< HEAD
         cout<<cur_time_str()<< ":"<< " thread "<<pthread_self()<<"start"<<endl;
 		while(flag){
             cout<<cur_time_str()<<":"<<" thread "<<pthread_self()<<" waiting......"<<endl;
-=======
-        cout<<"thread "<<pthread_self()<<"start"<<endl;
-		while(flag){
-            cout<<"thread "<<pthread_self()<<"waiting......"<<endl;
->>>>>>> d65a7f7fe7f7dafbfa1cbc42312a8b9853f38ac5
 			malloc_trim(0);
 			Replier rep(sock);
 			//没有消息，会block在这
