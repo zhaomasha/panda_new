@@ -32,16 +32,16 @@ do
     #install zmq
     $base_dir/../../deploy/install.sh $username $passwd $ip $install_dir
     #copy files
-    $base_dir/../../deploy/autocmd.exp $username $passwd $ip "rm -fr $base_dir/../../env $env_dir"
+    $base_dir/../../deploy/autocmd.exp $username $passwd $ip "rm -fr $env_dir"
     $base_dir/../../deploy/autoscp.exp $username $passwd $ip $base_dir/../../env $env_dir
     deploy_envfile_path=$base_dir/../../deploy/envfiles/${ip}.envfile
     if [ -e $deploy_envfile_path ]
     then
         $base_dir/../../deploy/autoscp.exp $username $passwd $ip $deploy_envfile_path $env_dir/param.sh
     fi
-    $base_dir/../../deploy/autocmd.exp $username $passwd $ip "rm -fr $base_dir/../../lib $lib_dir"
+    $base_dir/../../deploy/autocmd.exp $username $passwd $ip "rm -fr $lib_dir"
     $base_dir/../../deploy/autoscp.exp $username $passwd $ip $base_dir/../../lib $lib_dir
-    $base_dir/../../deploy/autocmd.exp $username $passwd $ip "rm -fr $base_dir/../../fuzhu $client_dir"
+    $base_dir/../../deploy/autocmd.exp $username $passwd $ip "rm -fr $client_dir"
     $base_dir/../../deploy/autoscp.exp $username $passwd $ip $base_dir/../../fuzhu $client_dir
     echo deploy $ip complete
 done<$base_dir/../config/client.ip
