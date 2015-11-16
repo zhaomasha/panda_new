@@ -308,7 +308,6 @@ void handler_read_edge_index(Replier &rep){
               delete it_out->second;
 	rep.ans(STATUS_OK,edges);
 }
-<<<<<<< HEAD
 
 char* cur_time_str(){
     time_t t = time(0);
@@ -318,7 +317,6 @@ char* cur_time_str(){
 }
 
 
-=======
 //处理根据属性范围查找边的函数
 void handler_read_edge_index_range(Replier &rep){
 	proto_blog_id_range *req_arg=(proto_blog_id_range*)rep.get_arg();
@@ -369,7 +367,6 @@ void handler_read_edge_index_range(Replier &rep){
               delete it_out->second;
 	rep.ans(STATUS_OK,edges);
 }
->>>>>>> d65a7f7fe7f7dafbfa1cbc42312a8b9853f38ac5
 //工作线程的函数，每一个线程一个套接字
 void * worker(void* args)
 {
