@@ -36,4 +36,7 @@ int main(int argc,char* argv[])
         all_num1+=nums1[i];
     }
     cout<<"graph "<<graph_name<<"'s vertex number:"<<all_num<<"   edge number:"<<all_num1<<endl;
+	list<Vertex_u> vi;
+	c.read_index_vertex(vi,0,30);
+	cout<<vi.size()<<endl;
 }
