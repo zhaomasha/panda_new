@@ -39,6 +39,7 @@ public:
 	~balance();//把最新的负载写入到文件中，覆盖旧的内容
 	string get_min();//得到负载最小的节点
 	void update(string ip,int num);//更新节点的负载，num代表数目
+	void redistribute(vector<string> lost_slaves, map<string, vector<string>& redistribute_info);
 	void print();//打印元数据，测试用
 private:
 	string path;//负载文件的路径，在参数里面写好了

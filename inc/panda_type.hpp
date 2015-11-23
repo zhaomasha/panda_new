@@ -86,4 +86,12 @@ public:
       Value(v_type s_id,v_type d_id):s_id(s_id),d_id(d_id){}
       Value(){} 
 };
+
+class RedistributeTerm{
+public:
+	string graph_name;
+	string src_slave;
+	string dst_slave;
+	uint32_t subgraph_id;
+}
 #endif

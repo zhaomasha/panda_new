@@ -7,8 +7,8 @@
 using namespace zmq;
 
 enum{ASK_CMD,ASK_ARG,ASK_SIZE};//请求包括两个字段，一个是命令，一个是参数，具体参数是什么，根据命令的类型决定
-enum{CMD_CREATE_GRAPH,CMD_GRAPH_IN,CMD_GET_META,CMD_ADD_VERTEX,CMD_ADD_EDGE,CMD_READ_EDGE,CMD_ADD_EDGES,CMD_ADD_VERTEXES,CMD_READ_EDGES,CMD_READ_TWO_EDGES,CMD_READ_EDGE_INDEX,CMD_GET_ALL_VERTEX_NUM,CMD_GET_ALL_EDGE_NUM,CMD_READ_VERTEX,CMD_FLUSH,CMD_GET_ALL_VERTEX,CMD_ADD_SLAVE,CMD_KEEP_SLAVE_STATUS,CMD_GET_INDEX_VERTEX,CMD_GET_INDEX_RANGE_EDGE,CMD_SIZE};//这是命令的类
-const string cmd_name[CMD_SIZE]={"create graph","graph is in?","get ip of vertex","add vertex","add edge","read all edge of a vertex","add many edges","add many vertexes","read many edges","read all edge between two vertex","read edges about attribute","get vertex num","get edge num","read vertex","flush","get all vertex","add slave","keep slave status","get some vertex","get range edge"};
+enum{CMD_CREATE_GRAPH,CMD_GRAPH_IN,CMD_GET_META,CMD_ADD_VERTEX,CMD_ADD_EDGE,CMD_READ_EDGE,CMD_ADD_EDGES,CMD_ADD_VERTEXES,CMD_READ_EDGES,CMD_READ_TWO_EDGES,CMD_READ_EDGE_INDEX,CMD_GET_ALL_VERTEX_NUM,CMD_GET_ALL_EDGE_NUM,CMD_READ_VERTEX,CMD_FLUSH,CMD_GET_ALL_VERTEX,CMD_ADD_SLAVE,CMD_KEEP_SLAVE_STATUS,CMD_GET_INDEX_VERTEX,CMD_GET_INDEX_RANGE_EDGE,CMD_LOST_SLAVES,CMD_SIZE};//这是命令的类
+const string cmd_name[CMD_SIZE]={"create graph","graph is in?","get ip of vertex","add vertex","add edge","read all edge of a vertex","add many edges","add many vertexes","read many edges","read all edge between two vertex","read edges about attribute","get vertex num","get edge num","read vertex","flush","get all vertex","add slave","keep slave status","get some vertex","get range edge","lost slaves"};
 enum{ANS_STATUS,ANS_DATA,ANS_SIZE};//响应包括两个字段，一个是状态，一个是数据，具体数据是什么，根据请求的类型决定
 enum{STATUS_OK,STATUS_EXIST,STATUS_NOT_EXIST,STATUS_V_EXIST,STATUS_V_NOT_EXIST,STATUS_E_EXIST,STATUS_NEW, STATUS_REJECT_SLAVE,STATUS_INVALID_SLAVE};//这是相应的状态的类型
 //下面都是通信的消息体
@@ -155,6 +155,21 @@ class proto_slave_status{
 public:
 	unsigned int slave_serial;
 	proto_slave_status(unsigned int _slave_serial):slave_serial(_slave_serial){
+	}
+};
+
+//子图重新分配信息
+class proto_redistribute{
+public:
+	char graph_name[32];
+	char src_slave[16];
+	char dst_slave[16];
+	uint32_t subgraph_id;
+	proto_redistribute(string graph_name, string src_slave, string dst_slave, uint32_t subgraph_id){
+		memcpy(this->graph_name, graph_name.c_str(),graph_name.size()+1);
+		memcpy(this->src_slave, src_slave.c_str(), src_slave.size());
+		memcpy(this->dst_slave, dst_slave.c_str(), dst_slave.size()+1);
+		this->subgraph_id = subgraph_id;
 	}
 };
 
