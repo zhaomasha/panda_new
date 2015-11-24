@@ -21,8 +21,8 @@ string metadata::find_meta(uint32_t key){
 	if(it==meta.end()) return "";
 	return it->second;
 }
-//析构函数，把新的元数据重新写入文件中去，覆盖以前旧的
-metadata::~metadata(){
+void metadata::flush()
+{
 	ofstream out;
 	out.open(path.c_str(),ios::trunc);//如果文件已经存在，则先删除文件
 	unordered_map<uint32_t,string>::iterator it=meta.begin();
@@ -32,6 +32,10 @@ metadata::~metadata(){
 		it++;
 	}
 	out.close();
+}
+//析构函数，把新的元数据重新写入文件中去，覆盖以前旧的
+metadata::~metadata(){
+	flush();
 }
 void metadata::print(){
 	unordered_map<uint32_t,string>::iterator it=meta.begin();
@@ -109,6 +113,16 @@ void GraphMeta::print()
 		cout<<it->first<<":"<<endl;
 		it->second->print();
 		it++;
+	}
+	Unlock(meta_lock);
+}
+
+void GraphMeta::flush()
+{
+	Lock(meta_lock);
+	for(unordered_map<string, metadata*>::iterator it = metas.begin();
+			it != metas.end(); ++it){
+		it->second->flush();
 	}
 	Unlock(meta_lock);
 }
