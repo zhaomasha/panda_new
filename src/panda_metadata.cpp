@@ -1,4 +1,5 @@
 #include "panda_metadata.hpp"
+extern string server_dir_name;
 //初始化一个子图的元数据
 void metadata::init(string name,string path){
 	graph_name=name;
@@ -39,6 +40,115 @@ void metadata::print(){
 		it++;
 	}
 }
+
+GraphMeta::GraphMeta* get_instance()
+{
+	if(meta_instance == NULL){
+		meta_instance = new GraphMeta();
+	}
+	return meta_instance;
+}
+
+int GraphMeta::find_graph(string graph_name)
+{
+	Lock(meta_lock);
+
+	if( __find_graph(graph_name)){
+		Unlock(meta_lock);
+		return 1;
+	}
+	Unlock(meta_lock);
+	return 0;
+}
+
+string GraphMeta::find_loc(string graph_name, v_type vertex_id)
+{
+	Lock(meta_lock);
+	metadata* g_meta = __find_graph(graph_name);
+	if( !g_meta ){
+		//graph not exist
+		Unlock(meta_lock);
+		return "";
+	}
+	uint32_t subgraph_key=get_subgraph_key(id);//得到顶点所在的子图
+	string sub_ip=g_meta->find_meta(subgraph_key);
+	if(sub_ip==""){
+		//如果图中该子图没有，则分配一个节点给该子图
+		balance* bal = balance::get_instance();
+		string ip=bal->get_min();
+		bal->update(ip,1);//该节点的负载加1
+		m->add_meta(key,ip);//更新该图的元数据
+		sub_ip = ip;
+	}
+	Unlock(meta_lock);
+	return sub_ip;	
+}
+
+int GraphMeta::creat_graph(string graph_name)
+{
+	Lock(meta_lock);
+	if( __find_graph(graph_name)){
+		Unlock(meta_lock);
+		return -1;
+	}
+	string path=server_dir_name+"/"+graph_name+".meta";
+	ofstream fout(path.c_str());
+	fout.close();
+	metadata* m=new metadata();
+	m->init(graph_name,path);
+	metas.insert(pair<string,metadata*>(graph_name,m));			  
+	Unlock(meta_lock);
+	return 0;
+}
+
+void GraphMeta::print()
+{
+	Lock(meta_lock);
+	unordered_map<string,metadata*>::iterator it=metas.begin();
+	while(it!=metas.end()){
+		cout<<it->first<<":"<<endl;
+		it->second->print();
+		it++;
+	}
+	Unlock(meta_lock);
+}
+
+GraphMeta::GraphMeta()
+{
+	//initialize lock
+	meta_lock = GetLock();
+	Initlock(meta_lock, NULL);
+	//load meta data in disk
+    glob_t g;
+	g.gl_offs=0;
+	string meta_pattern=server_dir_name+"/*.meta";
+	int res=glob(meta_pattern.c_str(),0,0,&g);
+	if(res!=0&&res!=GLOB_NOMATCH){
+		cout<<"master meta failed to invoking glob"<<endl;
+	}else{
+		if(g.gl_pathc==0){
+			cout<<"master meta no match"<<endl;
+		}else{
+			for(uint32_t i=0;i<g.gl_pathc;i++){
+				metadata* m=new metadata();
+				string graph_name=metapath_key(g.gl_pathv[i]);
+				string path(g.gl_pathv[i]);
+				m->init(graph_name,path);
+				metas.insert(pair<string,metadata*>(graph_name,m));	
+			}
+		}
+	}
+}
+
+metadata* GraphMeta::__find_graph(string graph_name)
+{
+	unordered_map<string, metadata*>::iterator rlt = metas.find(graph_name);
+	if( rlt == metas.end() ){
+		return NULL;
+	}
+	return rlt->second;
+}
+
 //初始化负载，参数中配置了slave集群，每个slave都有负载
 void balance::init(){
 	path=string(getenv("BAL_DIR_NAME"))+"/balance.cfg";

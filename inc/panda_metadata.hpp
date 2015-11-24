@@ -18,18 +18,57 @@ private:
 	string graph_name;//该元数据所属的图的名字
 	string path;//元数据文件名
 	unordered_map<uint32_t,string> meta;//图的元数据，子图id和ip的hash表
-	lock_t* meta_lock;
 };
 class GraphMeta{
 public:
-	GraphMeta();
-	~GraphMeta();
-	metadata* find(string graph_name);
-	int insert(metadata* pgraph_meta);
+
+	/*
+	 * get the graph meta data manager's instance(singleinstance).
+	 */
+	static GraphMeta* get_instance();
+
+	/*
+	 * Check if the graph is already in system
+	 * input:
+	 *		graph_name, specify the graph's name
+	 * return:
+	 *		1 if the graph found, 0 not
+	 */
+	int find_graph(string graph_name);
+
+	/*
+	 *	Find the vertex' location in the system, which actually is 
+	 *	location of the subgraph the vertex belong. If the subgra-
+	 *	ph is not exist , it will be created.
+	 *	input:
+	 *		graph_name, the graph's name that the vertex belong
+	 *		vertex_id, specify id of the vertex.
+	 *	return:
+	 *		Empty string if the graph is not exist, or ip of the
+	 *		vertex belongs.
+	 *
+	 */
+	string find_loc(string graph_name, v_type vertex_id);
+
+	/*
+	 *	Create a new graph in system
+	 *	input:
+	 *		graph_name, specify the graph's name.
+	 *	return:
+	 *		0 if success, -1 if graph already exist.
+	 */
+	int creat_graph(string graph_name);
+
+	/*
+	 *	Print all meta info
+	 */
 	void print();
 private:
-	lock_t* graphs_meta_lock;
 	unordered_map<string,metadata*> metas;//graph和元数据对应表
+	lock_t* meta_lock;
+	static GraphMeta* meta_instance;
+	metadata* __find_graph(string graph_name);
+	GraphMeta();
 }
 
 //负载的类，每个节点所对应的子图数目当作负载

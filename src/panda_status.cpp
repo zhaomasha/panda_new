@@ -169,10 +169,26 @@ void handle_keep_slave_status(Replier & rep,PandaStatus* panda_status)
 	}
 }
 
+void send_redistribute(Requester& req_back, std::vector<RedistributeTerm> redistribute_info)
+{
+	for(std::vector<RedistributeTerm>::iterator it = redistribute_info.begin();
+			it != redistribute_info.end(); ++it){
+		proto_redistribute msg_redistribute(it->graph_name,it->src_slave,it->dst_slave,it->subgraph_id);
+		req_back.ask(CMD_LOST_SLAVES, &msg_redistribute, sizeof(proto_redistribute));
+		req_back.parse_ans();
+		int ret = req_back.get_status();
+		if( ret != STATUS_OK ){
+			std::cout << "error in informing back controller lost slave info,error code:"<<ret << std::endl; 
+		}
+	}
+	char* content = "redistribute info end";
+	req_back.ask(CMD_LOST_SLAVES_END,content, strlen(content)+1);
+}
+
 /*
  * check all slaves' status, find the lost ones and inform back_controller
  */
-void check_invalid_slaves(PandaStatus* panda_status)
+void check_invalid_slaves(PandaStatus* panda_status, contex_t& ctx)
 {
 	std::vector<std::string> lost_slaves;
 	panda_status->check_alive(lost_slaves);
@@ -180,6 +196,13 @@ void check_invalid_slaves(PandaStatus* panda_status)
 		for(uint32_t i=0; i<lost_slaves.size(); ++i){
 			std::cout << "Warning: Detected slave lost:" << lost_slaves[i] << std::endl;
 		}
+		std::vector<std::string> redistribute_info;
+		bal.redistribute(lost_slaves, redistribute_info);
+        socket_t s(ctx,ZMQ_REQ);
+		std::string endpoint="tcp://"+back_ip+":"+ back_port;
+        s.connect(endpoint.c_str());
+        Requester req_back(s);
+		send_redistribute(req_back, redistribute_info);
 	}
 }
 
