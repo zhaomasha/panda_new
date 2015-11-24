@@ -65,6 +65,7 @@ int GraphMeta::find_graph(string graph_name)
 	return 0;
 }
 
+//获取元数据的函数，根据图和顶点获取所在的节点，如果顶点所在的子图还没有分配节点，则根据负载来分配，虽然这时候该子图还没有数据，但是已经分配好了节点，这是个异步过程。客户端会先确保访问的图存在，所以这个函数能调用，就肯定能保证该图已经存在。为了保险起见，如果图不存在，则返回空串
 string GraphMeta::find_loc(string graph_name, v_type vertex_id)
 {
 	Lock(meta_lock);
@@ -78,7 +79,7 @@ string GraphMeta::find_loc(string graph_name, v_type vertex_id)
 	string sub_ip=g_meta->find_meta(subgraph_key);
 	if(sub_ip==""){
 		//如果图中该子图没有，则分配一个节点给该子图
-		balance* bal = balance::get_instance();
+		Balancer* bal = Balancer::get_instance();
 		string ip=bal->get_min();
 		bal->update(ip,1);//该节点的负载加1
 		m->add_meta(key,ip);//更新该图的元数据
@@ -130,7 +131,7 @@ void GraphMeta::flush()
 GraphMeta::GraphMeta()
 {
 	//initialize lock
-	meta_lock = GetLock();
+	meta_lock = Getlock();
 	Initlock(meta_lock, NULL);
 	//load meta data in disk
     glob_t g;
@@ -153,6 +154,11 @@ GraphMeta::GraphMeta()
 		}
 	}
 }
+GraphMeta::~GraphMeta()
+{
+	flush();
+	Destroylock(meta_lock);
+}
 
 metadata* GraphMeta::__find_graph(string graph_name)
 {
@@ -162,10 +168,32 @@ metadata* GraphMeta::__find_graph(string graph_name)
 	}
 	return rlt->second;
 }
+void GraphMeta::redistribute(vector<string> lost_slaves, vector<RedistributeTerm>& redistribute_info)
+{
+	
+}
+
+Balancer* Balancer::get_instance()
+{
+	if( bal_instance == NULL){
+		bal_instance = new Balance();
+	}
+	return bal_instance;
+}
+
+Balancer::Balancer()
+{
+	//initialize balance data from config file
+	init();
+	//init lock
+	bal_lock = Getlock();
+	Initlock(bal_lock, NULL);
+
+}
 
 //初始化负载，参数中配置了slave集群，每个slave都有负载
-void balance::init(){
-	path=string(getenv("BAL_DIR_NAME"))+"/balance.cfg";
+void Banlancer::init(){
+	path=string(getenv("BAL_DIR_NAME"))+"/banlance.cfg";
 	if(access(path.c_str(),0)!=0){
 		//如果不存在负载文件，则创建一个负载文件
  		ofstream fout(path.c_str());
@@ -184,22 +212,41 @@ void balance::init(){
 		while(getline(fin,tmp)){
 			bal.insert(parse_ip_num(tmp,":"));
 		}
-		
 	}
 }
-balance::~balance(){
+
+void Balancer::flush()
+{
+	Lock(bal_lock);
 	ofstream out;
 	out.open(path.c_str(),ios::trunc);//如果文件已经存在，则先删除文件
-
 	unordered_map<string,uint32_t>::iterator it=bal.begin();
 	while(it!=bal.end()){
 		out<<it->first<<":"<<it->second<<"\n";	
 		it++;
 	}
-        out.close();
+    out.close();
+	Unlock(bal_lock);
 }
+
+Banlancer::~balance()
+{
+	flush();
+	Destroylock(bal_lock);
+	free(bal_lock);
+}
+
 //得到最小负载的节点，遍历负载集合，找出最小负载的ip
-string balance::get_min(){
+string Banlancer::get_min()
+{
+	Lock(bal_lock);
+	string ip = __get_min();
+	Unlock(bal_lock);
+	return ip;
+}
+
+string Banlancer::__get_min()
+{
 	unordered_map<string,uint32_t>::iterator it=bal.begin();
 	uint32_t min;
 	int n=0;
@@ -220,19 +267,24 @@ string balance::get_min(){
 	}
 	return ip;
 }
-void balance::update(string ip,int num){
+
+void Banlancer::update(string ip,int num){
+	Lock(bal_lock);
 	unordered_map<string,uint32_t>::iterator it=bal.find(ip);
 	if(it==bal.end()) cout<<"master: no "<<ip<<" node"<<endl;
 	else{
 		it->second+=num;
 	}
+	Unlock(bal_lock);
 }
-void balance::print(){
+void Banlancer::print(){
+	Lock(bal_lock);
 	unordered_map<string,uint32_t>::iterator it=bal.begin();
 	while(it!=bal.end()){
 		cout<<it->first<<" "<<it->second<<endl;	
 		it++;
 	}
+	Unlock(bal_lock);
 }
 
 

@@ -62,6 +62,10 @@ public:
 	int creat_graph(string graph_name);
 
 	/*
+	 *	redistribute subgraph according to the lost slaves
+	 */
+	void redistribute(vector<string> lost_slaves, vector<RedistributeTerm>& redistribute_info);
+	/*
 	 *	Print all meta info
 	 */
 	void print();
@@ -78,20 +82,26 @@ private:
 }
 
 //负载的类，每个节点所对应的子图数目当作负载
-class balance{
+class Balancer{
 public:
-	void init();//初始化负载均衡
-	~balance();//把最新的负载写入到文件中，覆盖旧的内容
+	/*
+	 *	Get balancer's instance,in single instance mode
+	 */
+	static Balancer* get_instance();
 	string get_min();//得到负载最小的节点
 	void update(string ip,int num);//更新节点的负载，num代表增加的数目
-	void redistribute(vector<string> lost_slaves, map<string, vector<string>& redistribute_info);
+	//把最新的负载写入到文件中，覆盖旧的内容
+	void flush();
+	~Balancer();//把最新的负载写入到文件中，覆盖旧的内容
 	void print();//打印元数据，测试用
 private:
 	string path;//负载文件的路径，在参数里面写好了
 	unordered_map<string,uint32_t> bal;//ip和子图数目的hash表
 	lock_t* bal_lock;
-	PandaStatus * panda_status;
-	GraphMeta* graph_meta;
+	static Balancer* bal_instance;
+	Balancer();
+	void init();//初始化负载均衡
+	string __get_min();
 };
 
 #endif

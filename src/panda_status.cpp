@@ -197,7 +197,8 @@ void check_invalid_slaves(PandaStatus* panda_status, contex_t& ctx)
 			std::cout << "Warning: Detected slave lost:" << lost_slaves[i] << std::endl;
 		}
 		std::vector<std::string> redistribute_info;
-		bal.redistribute(lost_slaves, redistribute_info);
+		GraphMeta* meta_manager = GraphMeta::get_instance();
+		meta_manager->redistribute(lost_slaves, redistribute_info);
         socket_t s(ctx,ZMQ_REQ);
 		std::string endpoint="tcp://"+back_ip+":"+ back_port;
         s.connect(endpoint.c_str());
