@@ -13,6 +13,8 @@
 #include "panda_zmq.hpp"
 #include "panda_zmqproc.hpp"
 #include "panda_status.h"
+#include "panda_metadata.hpp"
+#include "panda_type.hpp"
 
 typedef std::vector<std::string>::iterator string_vit;
 typedef std::vector<int>::iterator int_vit;
@@ -188,7 +190,7 @@ void send_redistribute(Requester& req_back, std::vector<RedistributeTerm> redist
 /*
  * check all slaves' status, find the lost ones and inform back_controller
  */
-void check_invalid_slaves(PandaStatus* panda_status, contex_t& ctx)
+void check_invalid_slaves(PandaStatus* panda_status, context_t& ctx)
 {
 	std::vector<std::string> lost_slaves;
 	panda_status->check_alive(lost_slaves);
@@ -196,10 +198,13 @@ void check_invalid_slaves(PandaStatus* panda_status, contex_t& ctx)
 		for(uint32_t i=0; i<lost_slaves.size(); ++i){
 			std::cout << "Warning: Detected slave lost:" << lost_slaves[i] << std::endl;
 		}
-		std::vector<std::string> redistribute_info;
+		std::vector<RedistributeTerm> redistribute_info;
 		GraphMeta* meta_manager = GraphMeta::get_instance();
 		meta_manager->redistribute(lost_slaves, redistribute_info);
         socket_t s(ctx,ZMQ_REQ);
+
+		std::string back_ip = getenv("BACK_IP");
+		std::string back_port = getenv("BACK_PORT");  
 		std::string endpoint="tcp://"+back_ip+":"+ back_port;
         s.connect(endpoint.c_str());
         Requester req_back(s);
@@ -244,7 +249,7 @@ void* keep_status_master(void* args)
 			cur_time = time(0);
 			past_time = cur_time - start_time;
 			if( past_time > period){
-				check_invalid_slaves(panda_status);
+				check_invalid_slaves(panda_status, *ctx);
 				start_time = cur_time;
 			}
 		}

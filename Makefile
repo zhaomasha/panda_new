@@ -4,7 +4,7 @@ headers=-I inc
 bin_dir=bin
 
 server_source=src/panda_master.cpp src/panda_util.cpp src/panda_metadata.cpp src/panda_split_method.cpp src/panda_status.cpp
-slave_source=src/panda_slave.cpp src/panda_subgraph.cpp src/panda_graph.cpp src/panda_graph_set.cpp src/panda_split_method.cpp src/panda_util.cpp src/panda_status.cpp
+slave_source=src/panda_slave.cpp src/panda_subgraph.cpp src/panda_graph.cpp src/panda_graph_set.cpp src/panda_split_method.cpp src/panda_util.cpp src/panda_status.cpp src/panda_metadata.cpp
 client_source=src/panda_client.cpp src/panda_split_method.cpp src/panda_util.cpp
 
 all: bin/panda_server bin/panda_slave lib/libpanda.so

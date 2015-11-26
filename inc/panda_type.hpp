@@ -93,5 +93,5 @@ public:
 	string src_slave;
 	string dst_slave;
 	uint32_t subgraph_id;
-}
+};
 #endif

@@ -1,7 +1,9 @@
 #ifndef PANDA_METADATA
 #define PANDA_METADATA
+#include "panda_metadata.hpp"
 #include "panda_head.hpp"
 #include "panda_util.hpp"
+#include "panda_type.hpp"
 //一个图的元数据，子图和节点的对应关系
 class metadata{
 public:
@@ -59,7 +61,7 @@ public:
 	 *	return:
 	 *		0 if success, -1 if graph already exist.
 	 */
-	int creat_graph(string graph_name);
+	int create_graph(string graph_name);
 
 	/*
 	 *	redistribute subgraph according to the lost slaves
@@ -73,13 +75,15 @@ public:
 	 *	Flush meta content to file
 	 */
 	void flush();
+	~GraphMeta();
 private:
 	unordered_map<string,metadata*> metas;//graph和元数据对应表
 	lock_t* meta_lock;
 	static GraphMeta* meta_instance;
+	string server_dir_name;
 	metadata* __find_graph(string graph_name);
 	GraphMeta();
-}
+};
 
 //负载的类，每个节点所对应的子图数目当作负载
 class Balancer{

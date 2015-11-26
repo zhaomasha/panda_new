@@ -1,5 +1,7 @@
 #include "panda_metadata.hpp"
+#include "panda_split_method.hpp"
 extern string server_dir_name;
+
 //初始化一个子图的元数据
 void metadata::init(string name,string path){
 	graph_name=name;
@@ -45,7 +47,8 @@ void metadata::print(){
 	}
 }
 
-GraphMeta::GraphMeta* get_instance()
+GraphMeta* GraphMeta::meta_instance = NULL;
+GraphMeta* GraphMeta::get_instance()
 {
 	if(meta_instance == NULL){
 		meta_instance = new GraphMeta();
@@ -75,21 +78,21 @@ string GraphMeta::find_loc(string graph_name, v_type vertex_id)
 		Unlock(meta_lock);
 		return "";
 	}
-	uint32_t subgraph_key=get_subgraph_key(id);//得到顶点所在的子图
+	uint32_t subgraph_key=get_subgraph_key(vertex_id);//得到顶点所在的子图
 	string sub_ip=g_meta->find_meta(subgraph_key);
 	if(sub_ip==""){
 		//如果图中该子图没有，则分配一个节点给该子图
 		Balancer* bal = Balancer::get_instance();
 		string ip=bal->get_min();
 		bal->update(ip,1);//该节点的负载加1
-		m->add_meta(key,ip);//更新该图的元数据
+		g_meta->add_meta(subgraph_key,ip);//更新该图的元数据
 		sub_ip = ip;
 	}
 	Unlock(meta_lock);
 	return sub_ip;	
 }
 
-int GraphMeta::creat_graph(string graph_name)
+int GraphMeta::create_graph(string graph_name)
 {
 	Lock(meta_lock);
 	if( __find_graph(graph_name)){
@@ -133,6 +136,12 @@ GraphMeta::GraphMeta()
 	//initialize lock
 	meta_lock = Getlock();
 	Initlock(meta_lock, NULL);
+	//init dir
+	server_dir_name = getenv("SERVER_DIR_NAME");
+	if(access(server_dir_name.c_str(),0)!=0){
+		string cmd=string("mkdir -p ")+server_dir_name;
+		system(cmd.c_str());
+	}
 	//load meta data in disk
     glob_t g;
 	g.gl_offs=0;
@@ -170,13 +179,15 @@ metadata* GraphMeta::__find_graph(string graph_name)
 }
 void GraphMeta::redistribute(vector<string> lost_slaves, vector<RedistributeTerm>& redistribute_info)
 {
-	
+	std::cout << "doing redistribute" << std::endl;
 }
+
+Balancer* Balancer::bal_instance = NULL;
 
 Balancer* Balancer::get_instance()
 {
 	if( bal_instance == NULL){
-		bal_instance = new Balance();
+		bal_instance = new Balancer();
 	}
 	return bal_instance;
 }
@@ -192,7 +203,14 @@ Balancer::Balancer()
 }
 
 //初始化负载，参数中配置了slave集群，每个slave都有负载
-void Banlancer::init(){
+void Balancer::init(){
+	//init dir
+	string bal_dir_name(getenv("BAL_DIR_NAME"));
+	if(access(bal_dir_name.c_str(),0)!=0){
+		string cmd=string("mkdir -p ")+bal_dir_name;
+		system(cmd.c_str());
+	}
+	//init bal
 	path=string(getenv("BAL_DIR_NAME"))+"/banlance.cfg";
 	if(access(path.c_str(),0)!=0){
 		//如果不存在负载文件，则创建一个负载文件
@@ -229,7 +247,7 @@ void Balancer::flush()
 	Unlock(bal_lock);
 }
 
-Banlancer::~balance()
+Balancer::~Balancer()
 {
 	flush();
 	Destroylock(bal_lock);
@@ -237,7 +255,7 @@ Banlancer::~balance()
 }
 
 //得到最小负载的节点，遍历负载集合，找出最小负载的ip
-string Banlancer::get_min()
+string Balancer::get_min()
 {
 	Lock(bal_lock);
 	string ip = __get_min();
@@ -245,7 +263,7 @@ string Banlancer::get_min()
 	return ip;
 }
 
-string Banlancer::__get_min()
+string Balancer::__get_min()
 {
 	unordered_map<string,uint32_t>::iterator it=bal.begin();
 	uint32_t min;
@@ -268,7 +286,7 @@ string Banlancer::__get_min()
 	return ip;
 }
 
-void Banlancer::update(string ip,int num){
+void Balancer::update(string ip,int num){
 	Lock(bal_lock);
 	unordered_map<string,uint32_t>::iterator it=bal.find(ip);
 	if(it==bal.end()) cout<<"master: no "<<ip<<" node"<<endl;
@@ -277,7 +295,7 @@ void Banlancer::update(string ip,int num){
 	}
 	Unlock(bal_lock);
 }
-void Banlancer::print(){
+void Balancer::print(){
 	Lock(bal_lock);
 	unordered_map<string,uint32_t>::iterator it=bal.begin();
 	while(it!=bal.end()){

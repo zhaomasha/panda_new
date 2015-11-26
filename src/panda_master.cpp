@@ -5,12 +5,12 @@
 #include "panda_split_method.hpp"
 #include "panda_status.h"
 using namespace std;
-string server_dir_name(getenv("SERVER_DIR_NAME"));
-string bal_dir_name(getenv("BAL_DIR_NAME"));
 pthread_t thread_worker,thread_switcher,thread_status;
 
 //进程退出函数
 void kill_func(int signum){	
+	Balancer* bal = Balancer::get_instance();
+	GraphMeta* metas = GraphMeta::get_instance();
 	delete bal;//各种析构，把内存中的内容更新到文件中去
 	delete metas;
 	pthread_cancel(thread_switcher);//消灭两个线程，然后主线程则退出
@@ -25,7 +25,7 @@ void kill_func(int signum){
 void handler_create_graph(Replier &rep){
 	//元数据里面包含了系统中所有的图
 	proto_graph* req_arg=(proto_graph*)rep.get_arg();//获取请求的参数
-	GraphMeta* metas = GraphMetas::get_instance();
+	GraphMeta* metas = GraphMeta::get_instance();
 	int ret = metas->create_graph(req_arg->graph_name);
 	if(ret != 0){
 		//图已经存在，返回错误
@@ -39,8 +39,8 @@ void handler_create_graph(Replier &rep){
 void handler_graph_is_in(Replier &rep){
 	//元数据里面包含了系统中所有的图
 	proto_graph* req_arg=(proto_graph*)rep.get_arg();//获取请求的参数
-	GraphMeta* metas = GraphMetas::get_instance();
-	if(metas->find_graph()){
+	GraphMeta* metas = GraphMeta::get_instance();
+	if(metas->find_graph(req_arg->graph_name)){
 		//图已经存在
 		rep.ans(STATUS_EXIST,"graph has exist",strlen("graph has exist")+1);
 	}else{
@@ -51,7 +51,7 @@ void handler_graph_is_in(Replier &rep){
 //获取顶点所在ip，如果该顶点所在的子图还没有分配，则分配，slave不会有动作。整个过程也是异步式的，slave直到客户端发送请求过来时才会创建子图
 void handler_get_meta(Replier &rep){
 	proto_graph_vertex* req_arg=(proto_graph_vertex*)rep.get_arg();//获取请求的参数
-	GraphMeta* metas = GraphMetas::get_instance();
+	GraphMeta* metas = GraphMeta::get_instance();
 	string ip = metas->find_loc(req_arg->graph_name, req_arg->vertex_id);
 	//返回ip给客户端
 	proto_ip rep_res(ip);
@@ -105,20 +105,7 @@ void* switcher(void *args)
 	scatter_sock.bind("inproc://scatter");
 	proxy(gather_sock,scatter_sock,NULL);
 }
-//初始化目录，有关目录不存在则创建，存在则无动作，
-void init_dir(){
-	if(access(server_dir_name.c_str(),0)!=0){
-		string cmd=string("mkdir -p ")+server_dir_name;
-		system(cmd.c_str());
-	}
-	if(access(bal_dir_name.c_str(),0)!=0){
-		string cmd=string("mkdir -p ")+bal_dir_name;
-		system(cmd.c_str());
-	}
-}
 int main(){
-	//初始化master节点的几个目录，不存在则创建
-	init_dir();
 	GraphMeta* metas = GraphMeta::get_instance();
 	metas->print();
 	//初始化负载，如果负载文件不存在，则会创建，然后初始化内存负载为各个节点是0，负载文件存在，则根据文件初始化内存中的负载
