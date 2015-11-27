@@ -66,7 +66,7 @@ public:
 	/*
 	 *	redistribute subgraph according to the lost slaves
 	 */
-	void redistribute(vector<string> lost_slaves, vector<RedistributeTerm>& redistribute_info);
+	void redistribute(const vector<string> &lost_slaves, vector<RedistributeTerm>& redistribute_info);
 	/*
 	 *	Print all meta info
 	 */

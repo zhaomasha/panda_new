@@ -203,9 +203,10 @@ void check_invalid_slaves(PandaStatus* panda_status, context_t& ctx)
 		meta_manager->redistribute(lost_slaves, redistribute_info);
         socket_t s(ctx,ZMQ_REQ);
 
-		std::string back_ip = getenv("BACK_IP");
-		std::string back_port = getenv("BACK_PORT");  
+		std::string back_ip = getenv("BACK_CTRL_IP");
+		std::string back_port = getenv("BACK_CTRL_PORT");  
 		std::string endpoint="tcp://"+back_ip+":"+ back_port;
+		std::cout << "backip:" << back_ip << "back_port:" << back_port << std::endl;
         s.connect(endpoint.c_str());
         Requester req_back(s);
 		send_redistribute(req_back, redistribute_info);

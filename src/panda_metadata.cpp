@@ -177,7 +177,7 @@ metadata* GraphMeta::__find_graph(string graph_name)
 	}
 	return rlt->second;
 }
-void GraphMeta::redistribute(vector<string> lost_slaves, vector<RedistributeTerm>& redistribute_info)
+void GraphMeta::redistribute(const vector<string> &lost_slaves, vector<RedistributeTerm>& redistribute_info)
 {
 	std::cout << "doing redistribute" << std::endl;
 }
