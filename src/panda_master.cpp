@@ -71,7 +71,7 @@ void* worker(void *args)
 			Replier rep(sock);
 			//没有消息，会block在这
 			rep.parse_ask();
-			cout<<cur_time_str() << " [Info] master thread, Operation "<<rep.get_cmd()<<":"<<cmd_name[rep.get_cmd()]<<endl;
+			cout<<cur_time_str() << " [INFO] master thread, Operation "<<rep.get_cmd()<<":"<<cmd_name[rep.get_cmd()]<<endl;
 			switch(rep.get_cmd()){
 				case CMD_CREATE_GRAPH:{
 					handler_create_graph(rep);	
