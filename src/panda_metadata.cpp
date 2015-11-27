@@ -1,4 +1,5 @@
 #include "panda_metadata.hpp"
+#include "panda_util.hpp"
 #include "panda_split_method.hpp"
 extern string server_dir_name;
 
@@ -22,6 +23,23 @@ string metadata::find_meta(uint32_t key){
 	unordered_map<uint32_t,string>::iterator it=meta.find(key);
 	if(it==meta.end()) return "";
 	return it->second;
+}
+void metadata::get_slave_sub(string slave_host, vector<uint32_t>& sub_ids)
+{
+	sub_ids.clear();
+	for(unordered_map<uint32_t,string>::iterator it = meta.begin();
+			it != meta.end(); ++it){
+		if(it->second == slave_host){
+			sub_ids.push_back(it->first);
+		}
+	}
+}
+void metadata::remove_subs(const vector<uint32_t>& sub_ids)
+{
+	for(vector<uint32_t>::const_iterator it = sub_ids.begin();
+			it != sub_ids.end(); ++it){
+		meta.erase(*it);
+	}
 }
 void metadata::flush()
 {
@@ -84,6 +102,10 @@ string GraphMeta::find_loc(string graph_name, v_type vertex_id)
 		//如果图中该子图没有，则分配一个节点给该子图
 		Balancer* bal = Balancer::get_instance();
 		string ip=bal->get_min();
+		if( ip == ""){
+			cout << cur_time_str() <<" [error] no avaliable slave for new subgraph of graph " <<  graph_name << endl;
+			return "";
+		}
 		bal->update(ip,1);//该节点的负载加1
 		g_meta->add_meta(subgraph_key,ip);//更新该图的元数据
 		sub_ip = ip;
@@ -180,6 +202,42 @@ metadata* GraphMeta::__find_graph(string graph_name)
 void GraphMeta::redistribute(const vector<string> &lost_slaves, vector<RedistributeTerm>& redistribute_info)
 {
 	std::cout << "doing redistribute" << std::endl;
+	Lock(meta_lock);
+	redistribute_info.clear();
+	Balancer* bal = Balancer::get_instance();
+	//get lost slave info, and remove them from metas and balancer
+	for(unordered_map<string, metadata*>::iterator it = metas.begin();
+			it != metas.end(); ++it){
+		RedistributeTerm term;
+		term.graph_name = it -> first;
+		for(vector<string>::const_iterator p_slave = lost_slaves.begin();
+				p_slave!=lost_slaves.end(); ++p_slave){
+			term.src_slave = *p_slave;
+			vector<uint32_t> sub_ids;
+			it->second->get_slave_sub(*p_slave, sub_ids);
+			for(vector<uint32_t>::iterator p_sub_id = sub_ids.begin();
+					p_sub_id!=sub_ids.end(); ++p_sub_id){
+				term.subgraph_id = *p_sub_id;
+				redistribute_info.push_back(term);
+			}
+			bal->remove_slave(*p_slave);
+			it->second->remove_subs(sub_ids);
+		}
+	}
+	//redistribute lost slave's subgraph
+	for(vector<RedistributeTerm>::iterator it = redistribute_info.begin();
+			it != redistribute_info.end(); ++it){
+		string ip=bal->get_min();
+		if(ip == ""){
+			cout << cur_time_str()<<" [error] no avaliable slave while recover" << endl;
+			return ;
+		}
+		bal->update(ip,1);//该节点的负载加1
+		metadata* g_meta = __find_graph(it->graph_name);
+		g_meta->add_meta(it->subgraph_id,ip);//更新该图的元数据
+		it->dst_slave = ip;
+	}
+	Unlock(meta_lock);
 }
 
 Balancer* Balancer::bal_instance = NULL;
@@ -268,7 +326,7 @@ string Balancer::__get_min()
 	unordered_map<string,uint32_t>::iterator it=bal.begin();
 	uint32_t min;
 	int n=0;
-	string ip;
+	string ip = "";
 	while(it!=bal.end()){
 		if(n==0) {
 			min=it->second;
@@ -302,6 +360,12 @@ void Balancer::print(){
 		cout<<it->first<<" "<<it->second<<endl;	
 		it++;
 	}
+	Unlock(bal_lock);
+}
+void Balancer::remove_slave(string ip)
+{
+	Lock(bal_lock);
+	bal.erase(ip);
 	Unlock(bal_lock);
 }
 

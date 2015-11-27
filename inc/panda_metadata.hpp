@@ -13,6 +13,8 @@ public:
 	void add_meta(uint32_t key,string ip);
 	//返回子图对应的ip
 	string find_meta(uint32_t key);
+	void get_slave_sub(string slave_host, vector<uint32_t>& sub_ids);
+	void remove_subs(const vector<uint32_t>& sub_ids);
 	//把新的元数据重新写入文件中去，覆盖以前旧的
 	void flush();
 	//析构函数，把新的元数据重新写入文件中去，覆盖以前旧的
@@ -94,6 +96,7 @@ public:
 	static Balancer* get_instance();
 	string get_min();//得到负载最小的节点
 	void update(string ip,int num);//更新节点的负载，num代表增加的数目
+	void remove_slave(string ip);
 	//把最新的负载写入到文件中，覆盖旧的内容
 	void flush();
 	~Balancer();//把最新的负载写入到文件中，覆盖旧的内容

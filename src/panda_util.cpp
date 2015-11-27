@@ -1,4 +1,11 @@
 #include "panda_util.hpp"
+char* cur_time_str(){
+    time_t t = time(0);
+    char *str = ctime(&t);
+    str[strlen(str)-1] = 0;
+    return str;
+}
+
 long getTime(){
 	struct timeval tv;
 	gettimeofday(&tv,NULL);

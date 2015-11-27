@@ -15,6 +15,7 @@
 #include "panda_status.h"
 #include "panda_metadata.hpp"
 #include "panda_type.hpp"
+#include "panda_util.hpp"
 
 typedef std::vector<std::string>::iterator string_vit;
 typedef std::vector<int>::iterator int_vit;
@@ -134,16 +135,16 @@ void* keep_status_slave(void*args)
 				request_add_slave(req_master, slave_serial);
 				time_t past_time = time(0) - start_time;
 				if(past_time > con_timeout){
-					std::cout<<"thread " << pthread_self() << ": cannot connected to master"<<std::endl;
+					std::cout<<cur_time_str()<< " [ERROR] status thread, cannot connected to master"<<std::endl;
 				}
-				std::cout<<"thread " << pthread_self() << " action: add to master ,get serial number:"<< slave_serial <<std::endl;
+				std::cout<<cur_time_str()<< " [INFO] status thread, action: ADD to master ,get serial number:"<< slave_serial <<std::endl;
             }else{
 				request_keep_status(req_master, slave_serial);
-				std::cout<<"thread " << pthread_self() << " action: keep status to master "<<std::endl;
+				std::cout<<cur_time_str() <<" [INFO] status thread,  action: keep status to master "<<std::endl;
             }
         }
     }catch(zmq::error_t& err){
-        std::cout<<"thread " << pthread_self() << " error: " << err.what()<<std::endl;
+        std::cout<<cur_time_str()<<" [ERROR] status thread error: "<<err.what()<<std::endl;         
     }
 }
 
@@ -207,6 +208,10 @@ void check_invalid_slaves(PandaStatus* panda_status, context_t& ctx)
 		std::string back_port = getenv("BACK_CTRL_PORT");  
 		std::string endpoint="tcp://"+back_ip+":"+ back_port;
 		std::cout << "backip:" << back_ip << "back_port:" << back_port << std::endl;
+		for(std::vector<RedistributeTerm>::iterator it = redistribute_info.begin();
+				it != redistribute_info.end(); ++it){
+			std::cout << it->graph_name << " " << it->src_slave << " " << it->dst_slave << " " << it->subgraph_id << std::endl;
+		}
         s.connect(endpoint.c_str());
         Requester req_back(s);
 		send_redistribute(req_back, redistribute_info);
@@ -235,7 +240,7 @@ void* keep_status_master(void* args)
 			rep.parse_ask();
 			int cmd_id = rep.get_cmd();
 			if( cmd_id >=0 )
-				std::cout<< "operation " << cmd_id << ":" << cmd_name[cmd_id] << std::endl;
+				std::cout<<cur_time_str()<< " [INFO] status thread, operation " << cmd_id << ":" << cmd_name[cmd_id] << std::endl;
 			time_t cur_time = time(0);
 			panda_status->slave_time_lapse(cur_time-click_time);
 			click_time = cur_time;
@@ -256,6 +261,6 @@ void* keep_status_master(void* args)
 		}
 		
     }catch(zmq::error_t& err){                                                            
-        std::cout<<"thread " << pthread_self() << " error: "<<err.what()<<std::endl;         
+        std::cout<<cur_time_str()<<" [ERROR] status thread error: "<<err.what()<<std::endl;         
     }                                                                                     
 }                        

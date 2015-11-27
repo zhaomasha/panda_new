@@ -5,10 +5,12 @@
 #include "panda_zmqproc.hpp"
 #include "panda_type.hpp"
 #include "panda_status.h"
+#include "panda_util.hpp"
 using namespace zmq;
 Graph_set *graph_set;
 const int thread_num=atoi(getenv("SLAVE_THREAD_NUM"));
 pthread_t thread_switcher,*threads, thread_status;
+static int work_id = 0;
 //进程退出函数
 void kill_func(int signum){
 	delete graph_set;//释放空间，各种析构，把内存中的内容更新到文件中去
@@ -311,12 +313,6 @@ void handler_read_edge_index(Replier &rep){
 	rep.ans(STATUS_OK,edges);
 }
 
-char* cur_time_str(){
-    time_t t = time(0);
-    char *str = ctime(&t);
-    str[strlen(str)-1] = 0;
-    return str;
-}
 
 
 //处理根据属性范围查找边的函数
@@ -372,19 +368,20 @@ void handler_read_edge_index_range(Replier &rep){
 //工作线程的函数，每一个线程一个套接字
 void * worker(void* args)
 {
+	int thread_tag = work_id++;
 	try{
 		context_t& ctx=*(context_t*)args;//获得进程的context
 		socket_t sock(ctx,ZMQ_REP);//创建线程的套接字
 		sock.connect("inproc://scatter");//inproc方式，一定要先bind
 		int flag=1;
-        cout<<cur_time_str()<< ":"<< " thread "<<pthread_self()<<"start"<<endl;
+        cout<<cur_time_str()<< " [INFO]"<< " worker thread "<<thread_tag<<", start"<<endl;
 		while(flag){
-            cout<<cur_time_str()<<":"<<" thread "<<pthread_self()<<" waiting......"<<endl;
+            cout<<cur_time_str()<<" [INFO]"<<" worker thread "<<thread_tag<<", waiting......"<<endl;
 			malloc_trim(0);
 			Replier rep(sock);
 			//没有消息，会block在这
 			rep.parse_ask();
-			cout<<cur_time_str()<<":"<<" thread "<<pthread_self()<<"->operation "<<rep.get_cmd()<<":"<<cmd_name[rep.get_cmd()]<<endl;
+			cout<<cur_time_str()<<" [INFO]"<<" worker thread "<<thread_tag<<", Operation "<<rep.get_cmd()<<":"<<cmd_name[rep.get_cmd()]<<endl;
 			switch(rep.get_cmd()){
 				case CMD_ADD_VERTEX:{
 					handler_add_vertex(rep);			
@@ -444,7 +441,7 @@ void * worker(void* args)
 			}
 		}
 	}catch(zmq::error_t& err){
-		cout<<"slave worker failed:"<<err.what()<<endl;
+		cout<<"slave worker "<<thread_tag<<" failed:"<<err.what()<<endl;
 	}
 }
 //创建zmq通信模式的线程

@@ -4,6 +4,7 @@
 #include "panda_util.hpp"
 #include "panda_split_method.hpp"
 #include "panda_status.h"
+#include "panda_util.hpp"
 using namespace std;
 pthread_t thread_worker,thread_switcher,thread_status;
 
@@ -70,7 +71,7 @@ void* worker(void *args)
 			Replier rep(sock);
 			//没有消息，会block在这
 			rep.parse_ask();
-			cout<<"operation "<<rep.get_cmd()<<":"<<cmd_name[rep.get_cmd()]<<endl;
+			cout<<cur_time_str() << " [Info] master thread, Operation "<<rep.get_cmd()<<":"<<cmd_name[rep.get_cmd()]<<endl;
 			switch(rep.get_cmd()){
 				case CMD_CREATE_GRAPH:{
 					handler_create_graph(rep);	
@@ -87,7 +88,7 @@ void* worker(void *args)
 			}
 		}
 	}catch(zmq::error_t& err){
-		cout<<err.what();
+		cout<<cur_time_str()<< "[ERROR] master thread, "<< err.what()<<endl;
 	}
 }
 //创建zmq通信模式的线程
