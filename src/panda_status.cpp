@@ -111,7 +111,7 @@ void request_keep_status(Requester& req_master, int slave_serial)
 	req_master.parse_ans();
 	int ret = req_master.get_status();
 	if( ret != STATUS_OK ){
-		std::cout << "error in keeping status,error code:"<<ret << std::endl; 
+		std::cout<< cur_time_str() << "[ERROR] error in keeping status,error code:"<<ret << std::endl; 
 	}                                                                         
 }
 

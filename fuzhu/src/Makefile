@@ -1,4 +1,4 @@
-cppflags=
+cppflags=-g
 headers=-I ../../inc
 libs=-lpanda -L ../../lib
 
