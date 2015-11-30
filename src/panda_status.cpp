@@ -172,8 +172,15 @@ void handle_keep_slave_status(Replier & rep,PandaStatus* panda_status)
 	}
 }
 
-void send_redistribute(Requester& req_back, std::vector<RedistributeTerm> redistribute_info)
+void send_redistribute(context_t& ctx, std::vector<RedistributeTerm> redistribute_info)
 {
+	socket_t s(ctx,ZMQ_REQ);
+	std::string back_ip = getenv("BACK_CTRL_IP");
+	std::string back_port = getenv("BACK_CTRL_PORT");
+	std::string endpoint="tcp://"+back_ip+":"+ back_port;
+	std::cout << "backip:" << back_ip << "back_port:" << back_port << std::endl;
+	s.connect(endpoint.c_str());
+	Requester req_back(s);
 	for(std::vector<RedistributeTerm>::iterator it = redistribute_info.begin();
 			it != redistribute_info.end(); ++it){
 		proto_redistribute msg_redistribute(it->graph_name,it->src_slave,it->dst_slave,it->subgraph_id);
@@ -184,8 +191,8 @@ void send_redistribute(Requester& req_back, std::vector<RedistributeTerm> redist
 			std::cout << "error in informing back controller lost slave info,error code:"<<ret << std::endl; 
 		}
 	}
-	char* content = "redistribute info end";
-	req_back.ask(CMD_LOST_SLAVES_END,content, strlen(content)+1);
+	const char* content = "redistribute info end";
+	req_back.ask(CMD_LOST_SLAVES_END,(void*)content, strlen(content)+1);
 }
 
 /*
@@ -202,19 +209,11 @@ void check_invalid_slaves(PandaStatus* panda_status, context_t& ctx)
 		std::vector<RedistributeTerm> redistribute_info;
 		GraphMeta* meta_manager = GraphMeta::get_instance();
 		meta_manager->redistribute(lost_slaves, redistribute_info);
-        socket_t s(ctx,ZMQ_REQ);
-
-		std::string back_ip = getenv("BACK_CTRL_IP");
-		std::string back_port = getenv("BACK_CTRL_PORT");  
-		std::string endpoint="tcp://"+back_ip+":"+ back_port;
-		std::cout << "backip:" << back_ip << "back_port:" << back_port << std::endl;
 		for(std::vector<RedistributeTerm>::iterator it = redistribute_info.begin();
 				it != redistribute_info.end(); ++it){
 			std::cout << it->graph_name << " " << it->src_slave << " " << it->dst_slave << " " << it->subgraph_id << std::endl;
 		}
-        s.connect(endpoint.c_str());
-        Requester req_back(s);
-		send_redistribute(req_back, redistribute_info);
+		send_redistribute(ctx, redistribute_info);
 	}
 }
 
