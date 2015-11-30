@@ -28,7 +28,7 @@ then
     cd $script_dir/tcl$tcl_version/unix
     ./configure
     make
-    make install
+    sudo make install
     cd -
 else
     echo 'tcl alread installed'
@@ -42,7 +42,7 @@ then
     cd  $script_dir/expect$expect_version
     ./configure --with-tclinclude=$script_dir/tcl$tcl_version/generic/ --with-tclconfig=/usr/local/lib/
     make
-    make install
+    sudo make install
     cd -
 else
     echo 'expect alread installed'

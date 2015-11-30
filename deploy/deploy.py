@@ -30,8 +30,8 @@ class Deployor(object):
 
     def __install(self):
         os.system(os.path.join(base_dir,"base_install.sh"))
-        username = self.deploy_configer.get("HOST_INFO","rootname")
-        passwd = self.deploy_configer.get("HOST_INFO","rootpasswd")
+        username = self.deploy_configer.get("HOST_INFO","username")
+        passwd = self.deploy_configer.get("HOST_INFO","userpasswd")
         install_dir = self.deploy_configer.get("FILES","dst_home_dir")
         install_dir = os.path.join(install_dir,"install")
         for host in self.slave_hosts + [self.master_host]:
@@ -60,8 +60,8 @@ class Deployor(object):
         envfile_dir = self.deploy_configer.get("FILES","envfile_dir_src")
         self.sys_configer.gen_env_files(envfile_dir)
         
-        username = self.deploy_configer.get("HOST_INFO","rootname")
-        passwd = self.deploy_configer.get("HOST_INFO","rootpasswd")
+        username = self.deploy_configer.get("HOST_INFO","username")
+        passwd = self.deploy_configer.get("HOST_INFO","userpasswd")
 
         #copy file for master
         dst_dirs = self.deploy_configer.get("FILES", "dst_dirs_master").split()

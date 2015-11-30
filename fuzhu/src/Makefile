@@ -11,37 +11,37 @@ all: $(targets)
 
 ../bin/input: input.cpp
 	mkdir -p ../bin
-	g++ $(cppflags) $(headers) $(libs) -o $@ $^ 
+	g++ $(cppflags) $(headers) -o $@ $^ $(libs) 
 
 ../bin/input_new: input_new.cpp
-	g++ $(cppflags) $(headers) $(libs) -o $@ $^ 
+	g++ $(cppflags) $(headers) -o $@ $^ $(libs) 
 
 ../bin/input_random_edge: input_random_edge.cpp
-	g++ $(cppflags) $(headers) $(libs) -o $@ $^ 
+	g++ $(cppflags) $(headers) -o $@ $^ $(libs) 
 
 ../bin/input_random_vertex: input_random_vertex.cpp
-	g++ $(cppflags) $(headers) $(libs) -o $@ $^ 
+	g++ $(cppflags) $(headers) -o $@ $^ $(libs) 
 
 ../bin/read_edge: read_edge.cpp
-	g++ $(cppflags) $(headers) $(libs) -o $@ $^ 
+	g++ $(cppflags) $(headers) -o $@ $^ $(libs) 
 
 ../bin/read_edge_on_attr: read_edge_on_attr.cpp
-	g++ $(cppflags) $(headers) $(libs) -o $@ $^ 
+	g++ $(cppflags) $(headers) -o $@ $^ $(libs) 
 
 ../bin/read_vertex: read_vertex.cpp
-	g++ $(cppflags) $(headers) $(libs) -o $@ $^ 
+	g++ $(cppflags) $(headers) -o $@ $^ $(libs) 
 
 ../bin/read_vertex_number: read_vertex_number.cpp
-	g++ $(cppflags) $(headers) $(libs) -o $@ $^ 
+	g++ $(cppflags) $(headers) -o $@ $^ $(libs) 
 
 ../bin/read_vertex_random: read_vertex_random.cpp
-	g++ $(cppflags) $(headers) $(libs) -o $@ $^ 
+	g++ $(cppflags) $(headers) -o $@ $^ $(libs) 
 
 ../bin/read_all_vertex:read_all_vertex.cpp
-	g++ $(cppflags) $(headers) $(libs) -o $@ $^
+	g++ $(cppflags) $(headers) -o $@ $^ $(libs)
 
 ../bin/read_edge_random: read_edge_random.cpp
-	g++ $(cppflags) $(headers) $(libs) -o $@ $^
+	g++ $(cppflags) $(headers) -o $@ $^ $(libs)
 
 .PHONY: clean
 

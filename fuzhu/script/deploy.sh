@@ -10,8 +10,8 @@ set -x
 
 base_dir=`dirname $BASH_SOURCE`
 
-username="root"
-passwd="111111"
+username="wangxin"
+passwd="123"
 read home_dir < $base_dir/../config/client.path
 install_dir="$home_dir/install"
 env_dir="$home_dir/env"

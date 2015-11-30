@@ -39,7 +39,7 @@ then
     echo "install file configure"
     ssh $usr_name@$dst_host "cd $install_dir/zeromq-$zmq_version&& make"
     echo "install file make"
-    ssh $usr_name@$dst_host "cd $install_dir/zeromq-$zmq_version&& make install "
+    ssh $usr_name@$dst_host "cd $install_dir/zeromq-$zmq_version&& sudo make install "
     echo "install file install"
     ssh $usr_name@$dst_host "cd $install_dir/zeromq-$zmq_version&& make clean && cd $install_dir && rm -fr $install_dir/zeromq-$zmq_version"
 else
