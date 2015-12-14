@@ -23,9 +23,13 @@ int inform_one_slave(string& slave_info, uint32_t back_worker_port)
 	std::string endpoint="tcp://"+back_ip+":"+ back_port;
 	s.connect(endpoint.c_str());
 	Requester req_worker(s);
-	req_worker.ask(CMD_LOST_SLAVES, &msg_redistribute, sizeof(proto_redistribute));
+	bool success = req_worker.ask(CMD_LOST_SLAVES, &msg_redistribute, sizeof(proto_redistribute));
+	if (!success)
+		return -1;
 	req_worker.parse_ans();
-	
+	s.disconnect(endpoint.c_str());
+	s.close()
+	return 0;	
 }
 /*
  *	 inform slaves checkpoint to back up data
@@ -72,6 +76,7 @@ void process(void* args)
 			if( cmd_id >=0 )
 				std::cout<<cur_time_str()<< " [INFO] back_ctl thread, operation " << cmd_id << ":" << cmd_name[cmd_id] << std::endl;
 			switch(cmd_id){
+			case :
 
 			}
 			time_t cur_time = time(0);

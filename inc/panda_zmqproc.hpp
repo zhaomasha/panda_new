@@ -178,7 +178,7 @@ class Requester{
 public:
 	explicit Requester(socket_t& s,uint32_t size=200):sock(s),size(size){}
 	//发送请求，包括命令和参数
-	void ask(int cmd,void*data,size_t d_size){
+	bool ask(int cmd,void*data,size_t d_size){
 		//分段发送消息，请求消息有命令和参数，所以有两个消息体
 		zmq::message_t omsg[ASK_SIZE];
 		//初始化命令消息体为四个字节
@@ -190,8 +190,13 @@ public:
 		memcpy(omsg[ASK_ARG].data(),data,d_size);
 		//发送消息体
 		int i=0;
-		while(i<ASK_SIZE-1)sock.send(omsg[i++],ZMQ_SNDMORE);
+		while(i<ASK_SIZE-1){
+			bool ret = sock.send(omsg[i++],ZMQ_SNDMORE);
+			if(ret == false)
+				return false;
+		}
 		sock.send(omsg[i],0);
+		return true;
 	}
 	//向同一ip批量请求添加同一张图的多条边
 	void ask(int cmd,list<Edge_u> &edges,string graph_name){

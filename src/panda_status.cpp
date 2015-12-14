@@ -193,6 +193,8 @@ void send_redistribute(context_t& ctx, std::vector<RedistributeTerm> redistribut
 	}
 	const char* content = "redistribute info end";
 	req_back.ask(CMD_LOST_SLAVES_END,(void*)content, strlen(content)+1);
+	s.disconnect(endpoint.c_str());
+	s.close()
 }
 
 /*
